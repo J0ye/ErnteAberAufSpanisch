@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb668b4846aadab4885f1b7879dea901, type: 3}
+  m_Name: SpriteSet
+  m_EditorClassIdentifier: Cosecha::Cosecha.View.SpriteSet
+  pixel: {fileID: 21300000, guid: 53427a76e8f190444b649d799bcc3cf8, type: 3}
+  panel: {fileID: 21300000, guid: 17007fb7833d07846aebf81871104393, type: 3}
+  button: {fileID: 21300000, guid: bdf9cd6d7b564e1469b26f1c1a54b91d, type: 3}
+  font: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  sky: {fileID: 21300000, guid: 10cdc6915f985fa42879090af54204c7, type: 3}
+  mesa: {fileID: 21300000, guid: 47060aa9455565a4a89fa390a09e62a4, type: 3}
+  house: {fileID: 21300000, guid: 3b5313a08843444488fd953483fa963f, type: 3}
+  cloudSmall: {fileID: 21300000, guid: 7b722eb63a01ae141b6e404094db93fb, type: 3}
+  cloudMedium: {fileID: 21300000, guid: 5b85486cff969df4fb6b5505d3a09b71, type: 3}
+  cloudLarge: {fileID: 21300000, guid: 3e19b0c98233ad244bea1145b66c9627, type: 3}
+  scarecrow: {fileID: 21300000, guid: c06b2f80f8d560e458ab00e97f7862e4, type: 3}
+  boardCell: {fileID: 21300000, guid: a808fedc41573364da00fd0fd9b70be6, type: 3}
+  boardHighlight: {fileID: 21300000, guid: bf09ea83da083124c9f963f6adb576cd, type: 3}
+  iconWheat: {fileID: 21300000, guid: 1e4fa5d55c159dc4b85ee3b47ad1b78f, type: 3}
+  iconLavender: {fileID: 21300000, guid: 50b2b3375b11b084c8f41c9675738125, type: 3}
+  shedRoof: {fileID: 21300000, guid: 98a9e6cd6ee7e05469a72e3400e192fe, type: 3}
+  compost: {fileID: 21300000, guid: b07b68dbfb5df4048bbfeec6b76c2a4f, type: 3}
+  sign: {fileID: 21300000, guid: 47cdef11b87c95347aff7ef166cf4b7a, type: 3}
+  articleIcon: {fileID: 21300000, guid: cf5983bfda012014996cf552600a6e2a, type: 3}
+  starIcon: {fileID: 21300000, guid: f70cdfa91fd63994f867e0d73b16bf90, type: 3}
+  soilTile: {fileID: 21300000, guid: 5bc8de3d6adff0546a370a5769cc4af1, type: 3}
+  wheat: {fileID: 21300000, guid: c8ecf1797a1995b43b8315d365b1d4f6, type: 3}
+  lavender: {fileID: 21300000, guid: 09a192274fdb25e44a071ecba117bdcc, type: 3}

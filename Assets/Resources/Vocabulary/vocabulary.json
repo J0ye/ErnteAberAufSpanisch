@@ -1,0 +1,1184 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "tomar",
+      "es": "tomar",
+      "de": ["trinken", "nehmen"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "tomo", "tu": "tomas", "el": "toma", "nosotros": "tomamos", "vosotros": "tomáis", "ellos": "toman" }
+      },
+      "tags": ["Verben", "bild-1"]
+    },
+    {
+      "id": "beber",
+      "es": "beber",
+      "de": ["trinken"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "bebo", "tu": "bebes", "el": "bebe", "nosotros": "bebemos", "vosotros": "bebéis", "ellos": "beben" }
+      },
+      "tags": ["Verben", "bild-1", "bild-7", "bild-9"]
+    },
+    {
+      "id": "de_nada",
+      "es": "de nada",
+      "de": ["bitte schön", "bitteschön", "gern geschehen", "keine Ursache"],
+      "type": "phrase",
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "eso_es_todo",
+      "es": "eso es todo",
+      "de": ["das war alles", "das ist alles"],
+      "type": "phrase",
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "nada_mas",
+      "es": "nada más",
+      "de": ["nichts mehr", "sonst nichts", "nichts weiter"],
+      "type": "phrase",
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "tengo_sed",
+      "es": "tengo sed",
+      "de": ["ich habe Durst", "Durst"],
+      "type": "phrase",
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "tengo_hambre",
+      "es": "tengo hambre",
+      "de": ["ich habe Hunger", "Hunger"],
+      "type": "phrase",
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "cana",
+      "es": "caña",
+      "de": ["kleines Bier", "Bier vom Fass", "Glas Bier"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "vino_blanco",
+      "es": "vino blanco",
+      "de": ["Weißwein", "Weisswein"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "tinto",
+      "es": "tinto",
+      "de": ["Rotwein"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "yo_no_se",
+      "es": "yo no sé",
+      "de": ["ich weiß nicht", "ich weiss nicht", "weiß ich nicht", "weiss ich nicht"],
+      "type": "phrase",
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "para_mi",
+      "es": "para mí",
+      "de": ["für mich"],
+      "type": "phrase",
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "para_ti",
+      "es": "para ti",
+      "de": ["für dich"],
+      "type": "phrase",
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "pues",
+      "es": "pues",
+      "de": ["also", "nun", "na ja"],
+      "type": "other",
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "pincho",
+      "es": "pincho",
+      "de": ["Häppchen", "Spieß", "Spiess", "Snack"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "vino",
+      "es": "vino",
+      "de": ["Wein"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "calamar",
+      "es": "calamar",
+      "de": ["Tintenfisch", "Calamari", "Kalmar"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-1", "bild-3"]
+    },
+    {
+      "id": "aceituna",
+      "es": "aceituna",
+      "de": ["Olive"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-1", "bild-3"]
+    },
+    {
+      "id": "senor",
+      "es": "señor",
+      "de": ["Herr", "Mann"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-1", "bild-13"]
+    },
+    {
+      "id": "croqueta",
+      "es": "croqueta",
+      "de": ["Krokette"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-1", "bild-3"]
+    },
+    {
+      "id": "cerveza",
+      "es": "cerveza",
+      "de": ["Bier"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "gamba",
+      "es": "gamba",
+      "de": ["Garnele", "Krabbe", "Gamba"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-1", "bild-3"]
+    },
+    {
+      "id": "camarero",
+      "es": "camarero",
+      "de": ["Kellner"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-1"]
+    },
+    {
+      "id": "sentimiento",
+      "es": "sentimiento",
+      "de": ["Gefühl"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "genial",
+      "es": "genial",
+      "de": ["genial", "toll", "super"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "feliz",
+      "es": "feliz",
+      "de": ["glücklich", "froh"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "tranquilo",
+      "es": "tranquilo",
+      "de": ["ruhig", "entspannt", "gelassen"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "muy_bien",
+      "es": "muy bien",
+      "de": ["sehr gut"],
+      "type": "phrase",
+      "tags": ["Gefühle", "bild-2", "bild-4"]
+    },
+    {
+      "id": "fantastico",
+      "es": "fantástico",
+      "de": ["fantastisch", "toll"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "bien",
+      "es": "bien",
+      "de": ["gut"],
+      "type": "other",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "bastante_bien",
+      "es": "bastante bien",
+      "de": ["ziemlich gut", "recht gut"],
+      "type": "phrase",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "encantado",
+      "es": "encantado",
+      "de": ["erfreut", "begeistert", "entzückt"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "enamorado",
+      "es": "enamorado",
+      "de": ["verliebt"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "mas_o_menos",
+      "es": "más o menos",
+      "de": ["mehr oder weniger", "so lala", "einigermaßen", "einigermassen"],
+      "type": "phrase",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "asi_asi",
+      "es": "así así",
+      "de": ["so lala", "geht so"],
+      "type": "phrase",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "normal",
+      "es": "normal",
+      "de": ["normal"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "regular",
+      "es": "regular",
+      "de": ["mittelmäßig", "mittelmässig", "so lala", "geht so"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "ni_bien_ni_mal",
+      "es": "ni bien ni mal",
+      "de": ["weder gut noch schlecht", "so lala"],
+      "type": "phrase",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "muy_mal",
+      "es": "muy mal",
+      "de": ["sehr schlecht"],
+      "type": "phrase",
+      "tags": ["Gefühle", "bild-2", "bild-4"]
+    },
+    {
+      "id": "muerto",
+      "es": "muerto",
+      "de": ["tot", "todmüde", "erschöpft"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "terrible",
+      "es": "terrible",
+      "de": ["schrecklich", "furchtbar"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "horrible",
+      "es": "horrible",
+      "de": ["schrecklich", "furchtbar", "grauenhaft"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "aburrido",
+      "es": "aburrido",
+      "de": ["gelangweilt", "langweilig"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "sin_tiempo",
+      "es": "sin tiempo",
+      "de": ["keine Zeit", "ohne Zeit"],
+      "type": "phrase",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "fatal",
+      "es": "fatal",
+      "de": ["furchtbar", "schrecklich", "mies"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "deprimido",
+      "es": "deprimido",
+      "de": ["deprimiert", "niedergeschlagen"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "preocupado",
+      "es": "preocupado",
+      "de": ["besorgt"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "hecho_polvo",
+      "es": "hecho polvo",
+      "de": ["fix und fertig", "kaputt", "erledigt", "erschöpft"],
+      "type": "phrase",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "enfermo",
+      "es": "enfermo",
+      "de": ["krank"],
+      "type": "adjective",
+      "tags": ["Gefühle", "bild-2"]
+    },
+    {
+      "id": "estar",
+      "es": "estar",
+      "de": ["sein", "sich befinden"],
+      "type": "verb",
+      "verb": {
+        "irregular": true,
+        "present": { "yo": "estoy", "tu": "estás", "el": "está", "nosotros": "estamos", "vosotros": "estáis", "ellos": "están" }
+      },
+      "tags": ["bild-2", "bild-9"]
+    },
+    {
+      "id": "ser",
+      "es": "ser",
+      "de": ["sein"],
+      "type": "verb",
+      "verb": {
+        "irregular": true,
+        "present": { "yo": "soy", "tu": "eres", "el": "es", "nosotros": "somos", "vosotros": "sois", "ellos": "son" }
+      },
+      "tags": ["bild-2", "bild-7", "bild-9", "bild-11"]
+    },
+    {
+      "id": "siempre",
+      "es": "siempre",
+      "de": ["immer"],
+      "type": "other",
+      "tags": ["bild-2", "bild-7"]
+    },
+    {
+      "id": "que_sorpresa",
+      "es": "¡qué sorpresa!",
+      "de": ["was für eine Überraschung", "welche Überraschung"],
+      "type": "phrase",
+      "tags": ["bild-2"]
+    },
+    {
+      "id": "como",
+      "es": "como",
+      "de": ["wie", "als"],
+      "type": "other",
+      "tags": ["bild-2"]
+    },
+    {
+      "id": "como_other",
+      "es": "cómo",
+      "de": ["wie"],
+      "type": "other",
+      "tags": ["bild-2", "bild-14"]
+    },
+    {
+      "id": "comer",
+      "es": "comer",
+      "de": ["essen"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "como", "tu": "comes", "el": "come", "nosotros": "comemos", "vosotros": "coméis", "ellos": "comen" }
+      },
+      "tags": ["bild-3", "bild-7", "bild-9"]
+    },
+    {
+      "id": "tosta_de_jamon",
+      "es": "tosta de jamón",
+      "de": ["Schinkentoast", "Schinkenbrot"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-3"]
+    },
+    {
+      "id": "tortilla",
+      "es": "tortilla",
+      "de": ["Tortilla", "Kartoffelomelett", "Omelett"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-3"]
+    },
+    {
+      "id": "empanadilla",
+      "es": "empanadilla",
+      "de": ["Teigtasche", "Empanadilla"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-3"]
+    },
+    {
+      "id": "pulpo",
+      "es": "pulpo",
+      "de": ["Krake", "Oktopus", "Pulpo"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-3"]
+    },
+    {
+      "id": "mejillon",
+      "es": "mejillón",
+      "de": ["Miesmuschel", "Muschel"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-3"]
+    },
+    {
+      "id": "chorizo",
+      "es": "chorizo",
+      "de": ["Chorizo", "Paprikawurst"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-3"]
+    },
+    {
+      "id": "rico",
+      "es": "rico",
+      "de": ["lecker", "köstlich", "reich"],
+      "type": "adjective",
+      "tags": ["bild-3"]
+    },
+    {
+      "id": "idioma",
+      "es": "idioma",
+      "de": ["Sprache"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "lengua",
+      "es": "lengua",
+      "de": ["Sprache", "Zunge"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "pais",
+      "es": "país",
+      "de": ["Land", "Staat"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Sprachen", "bild-4", "bild-13"]
+    },
+    {
+      "id": "aleman",
+      "es": "alemán",
+      "de": ["Deutsch"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "espanol",
+      "es": "español",
+      "de": ["Spanisch"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "portugues",
+      "es": "portugués",
+      "de": ["Portugiesisch"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "frances",
+      "es": "francés",
+      "de": ["Französisch"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "ingles",
+      "es": "inglés",
+      "de": ["Englisch"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "japones",
+      "es": "japonés",
+      "de": ["Japanisch"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "chino",
+      "es": "chino",
+      "de": ["Chinesisch"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "ruso",
+      "es": "ruso",
+      "de": ["Russisch"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "que_idiomas_hablas",
+      "es": "¿qué idiomas hablas?",
+      "de": ["welche Sprachen sprichst du"],
+      "type": "phrase",
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "que_eres",
+      "es": "¿qué eres?",
+      "de": ["was bist du"],
+      "type": "phrase",
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "un_poco",
+      "es": "un poco",
+      "de": ["ein bisschen", "ein wenig", "etwas"],
+      "type": "phrase",
+      "tags": ["Sprachen", "bild-4"]
+    },
+    {
+      "id": "igualmente",
+      "es": "igualmente",
+      "de": ["ebenfalls", "gleichfalls"],
+      "type": "other",
+      "tags": ["bild-4"]
+    },
+    {
+      "id": "verdad",
+      "es": "verdad",
+      "de": ["nicht wahr", "oder", "ist das wahr", "stimmt's"],
+      "type": "other",
+      "tags": ["bild-4"]
+    },
+    {
+      "id": "mucho_gusto",
+      "es": "mucho gusto",
+      "de": ["sehr erfreut", "freut mich"],
+      "type": "phrase",
+      "tags": ["bild-4"]
+    },
+    {
+      "id": "y_de_apellido",
+      "es": "¿y de apellido?",
+      "de": ["und der Nachname", "und dein Nachname", "und mit Nachnamen"],
+      "type": "phrase",
+      "tags": ["bild-5"]
+    },
+    {
+      "id": "hablar",
+      "es": "hablar",
+      "de": ["sprechen", "reden"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "hablo", "tu": "hablas", "el": "habla", "nosotros": "hablamos", "vosotros": "habláis", "ellos": "hablan" }
+      },
+      "tags": ["bild-5", "bild-7"]
+    },
+    {
+      "id": "cual_es_tu_apellido",
+      "es": "¿cuál es tu apellido?",
+      "de": ["wie ist dein Nachname", "was ist dein Nachname", "wie heißt du mit Nachnamen", "wie heisst du mit Nachnamen"],
+      "type": "phrase",
+      "tags": ["bild-5"]
+    },
+    {
+      "id": "cual",
+      "es": "cuál",
+      "de": ["welcher", "welche", "welches", "was"],
+      "type": "other",
+      "tags": ["bild-5"]
+    },
+    {
+      "id": "como_te_llamas",
+      "es": "¿cómo te llamas?",
+      "de": ["wie heißt du", "wie heisst du", "wie ist dein Name"],
+      "type": "phrase",
+      "tags": ["Begrüßung", "Fragen", "bild-6", "bild-11", "bild-14", "bild-15"]
+    },
+    {
+      "id": "perro",
+      "es": "perro",
+      "de": ["Hund"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-6"]
+    },
+    {
+      "id": "pero",
+      "es": "pero",
+      "de": ["aber"],
+      "type": "other",
+      "tags": ["bild-6"]
+    },
+    {
+      "id": "deletrear",
+      "es": "deletrear",
+      "de": ["buchstabieren"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "deletreo", "tu": "deletreas", "el": "deletrea", "nosotros": "deletreamos", "vosotros": "deletreáis", "ellos": "deletrean" }
+      },
+      "tags": ["bild-6"]
+    },
+    {
+      "id": "puedes_deletrear_tu_nombre",
+      "es": "¿puedes deletrear tu nombre?",
+      "de": ["kannst du deinen Namen buchstabieren"],
+      "type": "phrase",
+      "tags": ["bild-6"]
+    },
+    {
+      "id": "tu",
+      "es": "tu",
+      "de": ["dein", "deine"],
+      "type": "other",
+      "tags": ["bild-6"]
+    },
+    {
+      "id": "tu_other",
+      "es": "tú",
+      "de": ["du"],
+      "type": "other",
+      "tags": ["bild-6"]
+    },
+    {
+      "id": "puedes_repetir_por_favor",
+      "es": "¿puedes repetir, por favor?",
+      "de": ["kannst du das bitte wiederholen", "kannst du bitte wiederholen", "bitte wiederholen"],
+      "type": "phrase",
+      "tags": ["bild-6"]
+    },
+    {
+      "id": "si_claro",
+      "es": "sí, claro",
+      "de": ["ja, klar", "ja klar", "natürlich", "klar"],
+      "type": "phrase",
+      "tags": ["bild-6"]
+    },
+    {
+      "id": "claro_que_si",
+      "es": "claro que sí",
+      "de": ["klar doch", "aber natürlich", "selbstverständlich", "natürlich"],
+      "type": "phrase",
+      "tags": ["bild-6"]
+    },
+    {
+      "id": "trabajar",
+      "es": "trabajar",
+      "de": ["arbeiten"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "trabajo", "tu": "trabajas", "el": "trabaja", "nosotros": "trabajamos", "vosotros": "trabajáis", "ellos": "trabajan" }
+      },
+      "tags": ["bild-7"]
+    },
+    {
+      "id": "todos",
+      "es": "todos",
+      "de": ["alle"],
+      "type": "other",
+      "tags": ["bild-7", "bild-14"]
+    },
+    {
+      "id": "leer",
+      "es": "leer",
+      "de": ["lesen"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "leo", "tu": "lees", "el": "lee", "nosotros": "leemos", "vosotros": "leéis", "ellos": "leen" }
+      },
+      "tags": ["bild-7"]
+    },
+    {
+      "id": "a_veces",
+      "es": "a veces",
+      "de": ["manchmal", "ab und zu"],
+      "type": "phrase",
+      "tags": ["bild-7"]
+    },
+    {
+      "id": "en",
+      "es": "en",
+      "de": ["in", "im", "auf"],
+      "type": "other",
+      "tags": ["bild-7"]
+    },
+    {
+      "id": "charlar",
+      "es": "charlar",
+      "de": ["plaudern", "quatschen", "sich unterhalten"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "charlo", "tu": "charlas", "el": "charla", "nosotros": "charlamos", "vosotros": "charláis", "ellos": "charlan" }
+      },
+      "tags": ["bild-7"]
+    },
+    {
+      "id": "escuchar",
+      "es": "escuchar",
+      "de": ["hören", "zuhören"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "escucho", "tu": "escuchas", "el": "escucha", "nosotros": "escuchamos", "vosotros": "escucháis", "ellos": "escuchan" }
+      },
+      "tags": ["bild-7"]
+    },
+    {
+      "id": "estudiar",
+      "es": "estudiar",
+      "de": ["lernen", "studieren"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "estudio", "tu": "estudias", "el": "estudia", "nosotros": "estudiamos", "vosotros": "estudiáis", "ellos": "estudian" }
+      },
+      "tags": ["bild-7"]
+    },
+    {
+      "id": "tambien",
+      "es": "también",
+      "de": ["auch"],
+      "type": "other",
+      "tags": ["bild-7", "bild-14"]
+    },
+    {
+      "id": "buscar",
+      "es": "buscar",
+      "de": ["suchen"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "busco", "tu": "buscas", "el": "busca", "nosotros": "buscamos", "vosotros": "buscáis", "ellos": "buscan" }
+      },
+      "tags": ["bild-7"]
+    },
+    {
+      "id": "quedar",
+      "es": "quedar",
+      "de": ["sich treffen", "treffen", "sich verabreden", "bleiben"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "quedo", "tu": "quedas", "el": "queda", "nosotros": "quedamos", "vosotros": "quedáis", "ellos": "quedan" }
+      },
+      "tags": ["bild-7"]
+    },
+    {
+      "id": "chatear",
+      "es": "chatear",
+      "de": ["chatten"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "chateo", "tu": "chateas", "el": "chatea", "nosotros": "chateamos", "vosotros": "chateáis", "ellos": "chatean" }
+      },
+      "tags": ["bild-7"]
+    },
+    {
+      "id": "quien_es",
+      "es": "¿quién es?",
+      "de": ["wer ist das", "wer ist es"],
+      "type": "phrase",
+      "tags": ["bild-8"]
+    },
+    {
+      "id": "quienes_son",
+      "es": "¿quiénes son?",
+      "de": ["wer sind sie", "wer sind die"],
+      "type": "phrase",
+      "tags": ["bild-8"]
+    },
+    {
+      "id": "tener",
+      "es": "tener",
+      "de": ["haben"],
+      "type": "verb",
+      "verb": {
+        "irregular": true,
+        "present": { "yo": "tengo", "tu": "tienes", "el": "tiene", "nosotros": "tenemos", "vosotros": "tenéis", "ellos": "tienen" }
+      },
+      "tags": ["bild-9"]
+    },
+    {
+      "id": "poder",
+      "es": "poder",
+      "de": ["können", "dürfen"],
+      "type": "verb",
+      "verb": {
+        "irregular": true,
+        "present": { "yo": "puedo", "tu": "puedes", "el": "puede", "nosotros": "podemos", "vosotros": "podéis", "ellos": "pueden" }
+      },
+      "tags": ["bild-9"]
+    },
+    {
+      "id": "querer",
+      "es": "querer",
+      "de": ["wollen", "lieben", "mögen"],
+      "type": "verb",
+      "verb": {
+        "irregular": true,
+        "present": { "yo": "quiero", "tu": "quieres", "el": "quiere", "nosotros": "queremos", "vosotros": "queréis", "ellos": "quieren" }
+      },
+      "tags": ["bild-9"]
+    },
+    {
+      "id": "ir",
+      "es": "ir",
+      "de": ["gehen", "fahren"],
+      "type": "verb",
+      "verb": {
+        "irregular": true,
+        "present": { "yo": "voy", "tu": "vas", "el": "va", "nosotros": "vamos", "vosotros": "vais", "ellos": "van" }
+      },
+      "tags": ["bild-9"]
+    },
+    {
+      "id": "practicar",
+      "es": "practicar",
+      "de": ["üben", "trainieren", "praktizieren"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "practico", "tu": "practicas", "el": "practica", "nosotros": "practicamos", "vosotros": "practicáis", "ellos": "practican" }
+      },
+      "tags": ["bild-9"]
+    },
+    {
+      "id": "cero",
+      "es": "cero",
+      "de": ["null"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "uno",
+      "es": "uno",
+      "de": ["eins"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "dos",
+      "es": "dos",
+      "de": ["zwei"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "tres",
+      "es": "tres",
+      "de": ["drei"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "cuatro",
+      "es": "cuatro",
+      "de": ["vier"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "cinco",
+      "es": "cinco",
+      "de": ["fünf"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "seis",
+      "es": "seis",
+      "de": ["sechs"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "siete",
+      "es": "siete",
+      "de": ["sieben"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "ocho",
+      "es": "ocho",
+      "de": ["acht"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "nueve",
+      "es": "nueve",
+      "de": ["neun"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "diez",
+      "es": "diez",
+      "de": ["zehn"],
+      "type": "other",
+      "tags": ["Zahlen", "bild-10"]
+    },
+    {
+      "id": "buenos_dias",
+      "es": "buenos días",
+      "de": ["guten Morgen", "guten Tag"],
+      "type": "phrase",
+      "tags": ["Begrüßung", "bild-11", "bild-14"]
+    },
+    {
+      "id": "buenas_tardes",
+      "es": "buenas tardes",
+      "de": ["guten Tag", "guten Nachmittag", "guten Abend"],
+      "type": "phrase",
+      "tags": ["Begrüßung", "bild-11", "bild-14"]
+    },
+    {
+      "id": "buenas_noches",
+      "es": "buenas noches",
+      "de": ["guten Abend", "gute Nacht"],
+      "type": "phrase",
+      "tags": ["Begrüßung", "bild-11", "bild-14"]
+    },
+    {
+      "id": "hola",
+      "es": "hola",
+      "de": ["hallo", "hi"],
+      "type": "other",
+      "tags": ["Begrüßung", "bild-11", "bild-14"]
+    },
+    {
+      "id": "que_tal",
+      "es": "¿qué tal?",
+      "de": ["wie geht's", "wie geht es dir", "wie geht's dir"],
+      "type": "phrase",
+      "tags": ["Begrüßung", "bild-11", "bild-14"]
+    },
+    {
+      "id": "de_donde_eres",
+      "es": "¿de dónde eres?",
+      "de": ["woher kommst du", "woher bist du", "wo kommst du her"],
+      "type": "phrase",
+      "tags": ["Fragen", "bild-11", "bild-15"]
+    },
+    {
+      "id": "llamarse",
+      "es": "llamarse",
+      "de": ["heißen", "heissen"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "me llamo", "tu": "te llamas", "el": "se llama", "nosotros": "nos llamamos", "vosotros": "os llamáis", "ellos": "se llaman" }
+      },
+      "tags": ["Vorstellung", "bild-11", "bild-14"]
+    },
+    {
+      "id": "senora",
+      "es": "señora",
+      "de": ["Frau", "Dame"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-13"]
+    },
+    {
+      "id": "nombre",
+      "es": "nombre",
+      "de": ["Name", "Vorname"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-13"]
+    },
+    {
+      "id": "apellido",
+      "es": "apellido",
+      "de": ["Nachname", "Familienname"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["bild-13"]
+    },
+    {
+      "id": "ciudad",
+      "es": "ciudad",
+      "de": ["Stadt"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-13", "bild-15"]
+    },
+    {
+      "id": "saludo",
+      "es": "saludo",
+      "de": ["Gruß", "Gruss", "Begrüßung", "Begrüssung"],
+      "type": "noun",
+      "noun": { "gender": "m", "articleDefinite": "el", "articleIndefinite": "un" },
+      "tags": ["Begrüßung", "bild-14"]
+    },
+    {
+      "id": "saludar",
+      "es": "saludar",
+      "de": ["begrüßen", "begrüssen", "grüßen", "grüssen"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "saludo", "tu": "saludas", "el": "saluda", "nosotros": "saludamos", "vosotros": "saludáis", "ellos": "saludan" }
+      },
+      "tags": ["Begrüßung", "bild-14"]
+    },
+    {
+      "id": "que_pasa",
+      "es": "¿qué pasa?",
+      "de": ["was ist los", "was geht"],
+      "type": "phrase",
+      "tags": ["Begrüßung", "bild-14"]
+    },
+    {
+      "id": "todo_bien",
+      "es": "¿todo bien?",
+      "de": ["alles gut", "alles klar", "alles in Ordnung"],
+      "type": "phrase",
+      "tags": ["Begrüßung", "bild-14"]
+    },
+    {
+      "id": "presentar",
+      "es": "presentar",
+      "de": ["vorstellen", "präsentieren"],
+      "type": "verb",
+      "verb": {
+        "irregular": false,
+        "present": { "yo": "presento", "tu": "presentas", "el": "presenta", "nosotros": "presentamos", "vosotros": "presentáis", "ellos": "presentan" }
+      },
+      "tags": ["Vorstellung", "bild-14"]
+    },
+    {
+      "id": "yo_soy",
+      "es": "yo soy",
+      "de": ["ich bin"],
+      "type": "phrase",
+      "tags": ["Vorstellung", "bild-14"]
+    },
+    {
+      "id": "me_llamo",
+      "es": "me llamo",
+      "de": ["ich heiße", "ich heisse", "mein Name ist"],
+      "type": "phrase",
+      "tags": ["Vorstellung", "bild-14"]
+    },
+    {
+      "id": "mi_nombre_es",
+      "es": "mi nombre es",
+      "de": ["mein Name ist", "ich heiße", "ich heisse"],
+      "type": "phrase",
+      "tags": ["Vorstellung", "bild-14"]
+    },
+    {
+      "id": "bienvenido",
+      "es": "bienvenido",
+      "de": ["willkommen"],
+      "type": "adjective",
+      "tags": ["bild-14"]
+    },
+    {
+      "id": "capital",
+      "es": "capital",
+      "de": ["Hauptstadt"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["bild-15"]
+    },
+    {
+      "id": "pregunta",
+      "es": "pregunta",
+      "de": ["Frage"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" },
+      "tags": ["Fragen", "bild-15"]
+    },
+    {
+      "id": "quien_eres",
+      "es": "¿quién eres?",
+      "de": ["wer bist du"],
+      "type": "phrase",
+      "tags": ["Fragen", "bild-15"]
+    },
+    {
+      "id": "de_que_ciudad",
+      "es": "¿de qué ciudad?",
+      "de": ["aus welcher Stadt", "aus welcher Stadt bist du", "aus welcher Stadt kommst du"],
+      "type": "phrase",
+      "tags": ["Fragen", "bild-15"]
+    },
+    {
+      "id": "casa",
+      "es": "casa",
+      "de": ["Haus"],
+      "type": "noun",
+      "noun": { "gender": "f", "articleDefinite": "la", "articleIndefinite": "una" }
+    },
+    {
+      "id": "grande",
+      "es": "grande",
+      "de": ["groß", "gross"],
+      "type": "adjective"
+    }
+  ]
+}

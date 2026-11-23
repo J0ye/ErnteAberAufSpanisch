@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2146674515719a24293ee65804d465e9, type: 3}
+  m_Name: BalanceConfig
+  m_EditorClassIdentifier: Cosecha::Cosecha.BalanceConfig
+  startGold: 5
+  startActions: 2
+  startGridWidth: 8
+  startGridHeight: 8
+  maxGridWidth: 15
+  maxGridHeight: 11
+  wheelbarrowSlots: 0
+  shedWidth: 5
+  shedHeight: 3
+  startWordIds:
+  - comer
+  - casa
+  - grande
+  - dos
+  startWordTypes: 01000000000000000200000003000000
+  accentedVowelBonus: 2
+  enyeOrDiaeresisBonus: 3
+  irregularVerbBonus: 3
+  band1MaxK: 4
+  band2MaxK: 8
+  band3MaxK: 12
+  sizeByBand: 04000000030000000200000001000000
+  goldByBand: 04000000020000000100000000000000
+  verbInfinitiveSurcharge: 2
+  pointsExponent: 2
+  pointsDivisor: 10
+  lineWeight: 1
+  cornerWeight: 1
+  blockWeight: 1
+  synergyPerWord: 0.1
+  articleMultiplier: 1.5
+  plusMultStep: 0.5
+  xMultFactor: 1.5
+  targetBase: 8
+  targetGrowth: 1.25
+  baseIncome: 3
+  priceBase: 2
+  priceGoldFactor: 3
+  pricePointsFactor: 1
+  discardRefund: 0.5
+  jokerDiscount: 0.6
+  wordOfferCount: 3
+  upgradeOfferCount: 2
+  complexityGateBase: 6
+  complexityGateDivisor: 2
+  rerollStartPrice: 1
+  rerollPriceStep: 1
+  spanishToGermanChance: 0.5
+  articleModPrice: 6
+  conjugationModPrice: 8
+  plusMultBasePrice: 10
+  plusMultPriceGrowth: 1.6
+  xMultBasePrice: 40
+  xMultPriceGrowth: 2
+  xMultMinRound: 10
+  fieldExpansionBasePrice: 15
+  fieldExpansionPriceGrowth: 2
+  extraActionBasePrice: 20
+  extraActionPriceGrowth: 2
+  commonWeight: 0.7
+  rareWeight: 0.3
+  formsPerShrink: 2
+  minWordSize: 1
+  quizAttempts: 3
+  jokerAttempts: 3
+  accentMode: 0
+  cloudSpawnMinSeconds: 8
+  cloudSpawnMaxSeconds: 20
+  cloudSpeedMin: 0.35
+  cloudSpeedMax: 0.6
+  harvestAnimationSeconds: 1.8
+  leaderboardSize: 10
