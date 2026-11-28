@@ -13,6 +13,7 @@ namespace Cosecha
         public double rank;
         public int roundReached;
         public int wordsPlanted;
+        /// <summary>Successful grammar actions (JSON name kept from the mod system for old leaderboards).</summary>
         public int modsLearned;
         public bool practice;
     }
@@ -57,7 +58,7 @@ namespace Cosecha
     /// <summary>Appends one CSV line per round for balancing analysis.</summary>
     public class RunLogger
     {
-        const string Header = "timestamp,runId,round,target,score,goldBefore,goldAfter,wordsBought,rerolls,modsApplied,quizAttempts,quizFailures,result";
+        const string Header = "timestamp,runId,round,target,score,goldBefore,goldAfter,wordsBought,rerolls,grammarActions,quizAttempts,quizFailures,result,satzteile,saetze,fragen";
         readonly string path;
 
         public RunLogger(string path) { this.path = path; }
@@ -66,6 +67,17 @@ namespace Cosecha
         {
             try
             {
+                // a log with an older column layout is moved aside instead of mixing layouts
+                if (File.Exists(path))
+                {
+                    string first;
+                    using (var sr = new StreamReader(path)) first = sr.ReadLine();
+                    if (first != Header)
+                    {
+                        string old = Path.Combine(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path) + "_old_" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".csv");
+                        File.Move(path, old);
+                    }
+                }
                 bool newFile = !File.Exists(path);
                 var c = CultureInfo.InvariantCulture;
                 string result = res.Passed ? "pass" : res.ScarecrowSaved ? "scarecrow" : "fail";
@@ -73,8 +85,10 @@ namespace Cosecha
                     DateTime.Now.ToString("s", c), run.RunId, res.Round.ToString(c),
                     res.Target.ToString("0.###", c), res.Score.ToString("0.###", c),
                     stats.GoldAtStart.ToString(c), run.Gold.ToString(c),
-                    stats.WordsBought.ToString(c), stats.Rerolls.ToString(c), stats.ModsApplied.ToString(c),
-                    stats.QuizAttempts.ToString(c), stats.QuizFailures.ToString(c), result);
+                    stats.WordsBought.ToString(c), stats.Rerolls.ToString(c), stats.GrammarActions.ToString(c),
+                    stats.QuizAttempts.ToString(c), stats.QuizFailures.ToString(c), result,
+                    res.Count(StructureCategory.Satzteil).ToString(c), res.Count(StructureCategory.Satz).ToString(c),
+                    res.Count(StructureCategory.Frage).ToString(c));
                 using (var sw = new StreamWriter(path, append: true))
                 {
                     if (newFile) sw.WriteLine(Header);

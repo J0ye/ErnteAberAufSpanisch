@@ -12,13 +12,94 @@ Run log and leaderboard: `Application.persistentDataPath` (`runlog.csv`, `leader
 
 ## Code layout
 - `Assets/Scripts/Core` – rules only, no MonoBehaviours: `ComplexityCalculator`, `ScoreCalculator`, `ShopGenerator`,
-  `AnswerChecker`, `GridModel`/`Shapes`, `RunState`, `VocabularyLoader`, persistence, `UiText` (all German strings).
+  `AnswerChecker`, `GridModel` (word bars, `GrowthSchedule`), `SentenceEngine` (pure C#, no Unity references),
+  `RunState`, `VocabularyLoader`, persistence, `UiText` (all German strings).
 - `Assets/Scripts/View` – `GameController` (input + flow + quizzes), `FieldView`/`SkyView` (world sprites),
   `UiViews` (HUD, shop, dialogs, tooltip, menus, debug). The UI is built from code at runtime.
 - `Assets/Scripts/Editor` – placeholder pixel-art generator and project setup.
-- `Assets/Tests/EditMode` – 49 tests (everything in section 13 plus regrowth, synergy, validation, tooltip,
-  shed, hot swap). Tests use their own copy of the sample vocabulary (`TestVocabulary.cs`), so the live word list
+- `Assets/Tests/EditMode` – 86 tests (change request v2 section 8 plus answer checking, validation, tooltip,
+  shed, hot swap). Tests use their own schema-2 sample vocabulary (`TestVocabulary.cs`), so the live word list
   can change freely.
+
+## Change request v2: sentence building (Nov 23, 2026)
+Cosecha is now a sentence-building game. **The sections further down describe the earlier packing game; where they
+mention shapes, rotation, the synergy ring, mods, upgrades, actions or the old start words, this section wins.**
+
+- **Removed:** shape families and rotation, the synergy ring, article/conjugation mods, +Mult/×Mult, field expansion,
+  extra action, the upgrade slots and the action counter (code and config fields deleted, not just hidden).
+- **Word bars:** a word of size n occupies n cells in one row; the anchor is the leftmost cell and carries the sign.
+  Board row 0 is the **top** row (the model used to count from the bottom); `FlatGrid` is anchored at the top-left.
+- **Field:** starts 6×2, max 12×7. `GrowthSchedule.SizeAt(cfg, round)` applies `growthIntervals` [3, 4] and
+  `growthOrder` [row, column]; when the scheduled dimension is maxed the other one grows (that is how round 39
+  reaches 12×7). Banner „Das Feld wächst!“. The mesa art was regenerated for 12×7.
+- **Stats:** function words size 1 / 1 point / 1 gold (price 6); other sizes 3/2/1 by K, verbs +1 cell in the
+  infinitive (`verbInfinitiveSurcharge = 1`). `WordStats.UnmoddedSize` is now `BaseSize`.
+- **Free grammar action** (`freeGrammarActionsPerRound = 1`): HUD button „Grammatik (n)“ (then click a highlighted
+  verb/adjective) or right-click a verb/adjective on the field. The dialog shows person/form buttons and one input,
+  3 attempts. State on the word: `WordInstance.VerbPerson` (−1 = infinitive) and `AdjectiveForm` (0 = m. Sg.).
+- **SentenceEngine:** patterns are data in `BalanceConfig.sentencePatterns` (category + role sequence such as
+  `Subject V:transitive Object`, `Q:object V:transitive Subject?`; syntax in `SentencePattern`). Agreement is in code.
+  `RunState.Analysis` caches the result until the field changes.
+- **Scoring:** `basePoints × (1 + bonuses)`, bonuses Satzteil 0.5 / Satz 1.5 / Frage 2.0, target `10 × 1.22^(r−1)`.
+- **Article merge:** dropping an article on a noun that takes it (definite or indefinite, no article yet) merges them: the noun keeps its size, shows „el pan“, points, gold and price paid add up; the engine treats it as an article+noun NP (counts as 2 words, so a lone merged noun is an NP2 Satzteil; no second article).
+- **Start words:** `yo` is fixed; verb and noun are random each run (transitive verb / noun from the `startWordPoolSize` lowest-K entries, toggle `randomizeStartVerbAndNoun`).
+- **Shop:** 5 word offers + joker (2×3 grid), need weighting and almost-structure lookahead in `ShopGenerator`.
+  Offers that complete an almost-structure show „★ passt zum Satz“. Articles are bought without a quiz,
+  pronouns are always asked Spanish → German.
+- **Visuals:** per-word outline in a darker shade of the badge color (board, shed, held word, shop preview);
+  twines through the sign centers (Satzteil light brown, Satz gold, Frage purple) with labels, pop-in/fade-out on
+  every change; at harvest the structures light up Frage → Satz → Satzteil, then the word points pop (2.5 s,
+  click skips). Debug overlay (F1) lists all structures and has „+1 Grammatik“.
+- **Run log:** new columns `grammarActions` (was `modsApplied`), `satzteile`, `saetze`, `fragen`. An existing
+  `runlog.csv` with the old header is renamed to `runlog_old_<timestamp>.csv` on the first write.
+  The leaderboard JSON keeps the field name `modsLearned`; it now counts successful grammar actions.
+
+### Readable board (Nov 23, 2026)
+- **Field cells are up to 44 px apart** (was 20) with a visible gap (`CellGapShare` 14 %). The pitch is
+  `IsoLayout.FieldPitch(columns, rows)`: the board keeps 44 px while the field fits into `FieldAreaPx` (310×184 px,
+  left of the shed, down to just above the toast/hint strip) and only shrinks when it would grow into them.
+  Schedule: 44 px up to 7×4 (round 11), then 38 → 36 → 34 → 30 → 25 px at 12×7 (still larger than before).
+- Each word is drawn as one bar: a dark backing strip fills the gaps between its cells, the outline goes around it,
+  and the **sign sits centered on the bar** in its upper part, with the crops below. Signs and their text grow with
+  the cells (up to 1.6×); long words shrink their text to fit the bar (one-cell words may overhang slightly).
+- Shed: 26 px pitch, moved to x 86–216 so it stays clear of the closed shop handle; compost moved down 4 px.
+- Board sprites are still drawn at 20 px and scaled (`FlatGrid.SpriteScale`). HUD, shop, dialogs and the shop
+  previews keep their size. At the largest field sizes the board overlaps the top of the decorative ground cliff.
+
+### Vocabulary schema 2
+- The loader accepts **only version 2**; any other version logs an error naming the file and loads nothing
+  (the main menu then shows that error when „Neues Spiel“ is pressed).
+- **Interim live list:** I converted the existing 150-entry `vocabulary.json` to schema 2 so the game keeps running
+  until your own v2 file replaces it (173 entries now). What the conversion did:
+  - verbs: `transitive` true for tomar, beber, comer, hablar, deletrear, leer, escuchar, estudiar, buscar, tener,
+    querer, practicar, saludar, presentar, poder; `copula` true for ser and estar; all others intransitive.
+  - adjectives: four forms generated by rule (‑o → ‑a/‑os/‑as, ‑e → ‑es, ‑z → ‑ces, consonant → ‑es).
+  - nouns: `number: "sg"` added. Retyped: `cómo` → questionWord (adverb), `cuál` → questionWord (subject),
+    `tú` → pronoun, `pero` → conjunction. Everything else kept its type.
+  - added: pronouns yo, él, ella, usted, nosotros/as, vosotros/as, ellos, ellas, ustedes; articles el, la, los,
+    las, un, una; y; qué, quién, dónde; pan and vivir (start word and an intransitive verb).
+  Please check these choices against your own v2 list.
+
+### Assumptions (v2)
+- **Duplicate sequences are dropped across directions**, not only within one direction. With horizontal bars a
+  vertical neighbor pair that overlaps in two columns is also a diagonal pair; counting it twice would make
+  round-1 case 3 (pan under como) score 11 instead of the specified 9.
+- **„la casa es rojo → nothing“** is read as „no Satz“: the article + noun phrase „la casa“ still counts as a
+  Satzteil, because the NP rule in section 4 applies to it. The test checks that no Satz forms and that es/rojo
+  join no structure.
+- **Grammar dialog** can be cancelled until the first attempt (no action used); after that the action is used
+  either way. Forms the word already shows are disabled (e.g. „grande“ m./f. Sg.), and the person/form choice
+  locks after the first attempt.
+- **Almost-structures:** a virtual one-cell token is tried in every free cell that touches a planted word
+  (8-neighborhood). Verbs are tried in all six persons and adjectives in all four forms, since the player can
+  conjugate or inflect after buying. The structure must be a new Satz/Frage with the virtual word first or last.
+- **Need-weighting ties** are broken by role order (pronoun, verb, noun, function, rest).
+- **Shop guarantees** are filled first (one completing offer, one offer from the largest-deficit role), then the
+  remaining slots are drawn by weight; the cards are shuffled afterwards.
+- **Scarecrow** looks only at the field; shed verbs keep their form. Gold income is still computed before it.
+- **Wheelbarrow code** is kept (0 slots); regrowth skips it and goes to the shed, then the compost.
+- **Twine labels:** below horizontal strings, to the right of vertical/diagonal ones. On the small 6×2 field
+  labels of crossing structures can overlap; this needs a hands-on look.
 
 ## Changes after the first prototype (requested)
 - **Exam mode toggle** in the main menu (saved in PlayerPrefs, default on). Off = practice mode: every quiz has a

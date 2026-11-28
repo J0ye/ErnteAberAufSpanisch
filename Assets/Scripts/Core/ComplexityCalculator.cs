@@ -6,13 +6,14 @@ namespace Cosecha
     public struct WordStats
     {
         public int K;
-        public int UnmoddedSize;
+        /// <summary>Size as bought (verbs: infinitive, including the infinitive cell).</summary>
+        public int BaseSize;
         public int BasePoints;
         public int Gold;
         public int Price;
     }
 
-    /// <summary>Derives size, base points, gold and price of a word from its Spanish spelling.</summary>
+    /// <summary>Derives size, base points, gold and price of a word from its Spanish spelling and type.</summary>
     public class ComplexityCalculator
     {
         const string AccentedVowels = "áéíóúÁÉÍÓÚ";
@@ -58,10 +59,14 @@ namespace Cosecha
 
         public int Size(int k, WordType type)
         {
+            if (type.IsFunctionWord()) return cfg.functionWordSize;
             int size = cfg.sizeByBand[Band(k)];
             if (type == WordType.Verb) size += cfg.verbInfinitiveSurcharge;
             return Math.Max(cfg.minWordSize, size);
         }
+
+        /// <summary>Size of a verb after its first conjugation (the infinitive cell is gone).</summary>
+        public int ConjugatedSize(WordStats s) => Math.Max(cfg.minWordSize, s.BaseSize - cfg.verbInfinitiveSurcharge);
 
         public int BasePoints(int k) =>
             (int)Math.Round(Math.Pow(k, BalanceConfig.D(cfg.pointsExponent)) / BalanceConfig.D(cfg.pointsDivisor), MidpointRounding.AwayFromZero);
@@ -76,12 +81,13 @@ namespace Cosecha
         public WordStats Compute(string spanish, WordType type, bool irregular, int complexityOverride = 0)
         {
             int k = ComputeK(spanish, irregular, complexityOverride);
-            int bp = BasePoints(k);
-            int gold = Gold(k);
+            bool fn = type.IsFunctionWord();
+            int bp = fn ? cfg.functionWordPoints : BasePoints(k);
+            int gold = fn ? cfg.functionWordGold : Gold(k);
             return new WordStats
             {
                 K = k,
-                UnmoddedSize = Size(k, type),
+                BaseSize = Size(k, type),
                 BasePoints = bp,
                 Gold = gold,
                 Price = Price(gold, bp)

@@ -81,6 +81,7 @@ namespace Cosecha.EditorTools
             set.sign = PixelArtGenerator.Load("sign");
             set.articleIcon = PixelArtGenerator.Load("icon_article");
             set.starIcon = PixelArtGenerator.Load("icon_star");
+            set.magnifier = PixelArtGenerator.Load("icon_magnifier");
             set.soilTile = PixelArtGenerator.Load("tile_soil");
             set.wheat = PixelArtGenerator.Load("crop_wheat");
             set.lavender = PixelArtGenerator.Load("crop_lavender");

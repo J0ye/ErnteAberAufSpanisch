@@ -40,6 +40,7 @@ namespace Cosecha
             return s.ToLower(CultureInfo.InvariantCulture);
         }
 
+        /// <summary>Strips a leading article only when another word follows it ("la casa" → "casa", "la" stays "la").</summary>
         public static string StripLeadingArticle(string normalized, IEnumerable<string> articles)
         {
             foreach (var a in articles)
@@ -93,11 +94,19 @@ namespace Cosecha
         public AnswerCheck CheckSpanish(string input, string solution) =>
             CheckAgainst(input, new[] { solution }, SpanishArticles);
 
+        /// <summary>Spanish answer for a vocabulary entry: article entries are never stripped ("el" stays "el").</summary>
+        public AnswerCheck CheckSpanish(string input, VocabEntry e) =>
+            e.Type == WordType.Article ? CheckExact(input, e.Es) : CheckSpanish(input, e.Es);
+
+        /// <summary>German answer for a vocabulary entry: articles' German translations ("der", "die") are never stripped.</summary>
+        public AnswerCheck CheckGerman(string input, VocabEntry e) =>
+            e.Type == WordType.Article ? CheckAgainst(input, e.De, null) : CheckGerman(input, e.De);
+
         /// <summary>Exact token answer (articles, verb forms): no article stripping.</summary>
         public AnswerCheck CheckExact(string input, string solution) =>
             CheckAgainst(input, new[] { solution }, null);
 
         /// <summary>For the joker: does the input match this Spanish lemma?</summary>
-        public bool MatchesSpanish(string input, string solution) => CheckSpanish(input, solution).IsCorrect;
+        public bool MatchesSpanish(string input, VocabEntry e) => CheckSpanish(input, e).IsCorrect;
     }
 }

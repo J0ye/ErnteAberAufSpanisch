@@ -113,6 +113,7 @@ namespace Cosecha.EditorTools
             Save("sign", Sign(), V(0.5f, 0.5f), new Vector4(3, 3, 3, 3));
             Save("icon_article", ArticleIcon(), V(0.5f, 0.5f));
             Save("icon_star", Star(), V(0.5f, 0.5f));
+            Save("icon_magnifier", Magnifier(), V(0.5f, 0.5f));
             Save("compost", Compost(), V(0.5f, 0.5f));
             Save("scarecrow", Scarecrow(), V(0.5f, 0f));
             DeleteObsolete("field", "soil_cell", "cell_highlight", "crop_noun_wheat", "crop_verb_corn", "crop_adjective_sunflower", "crop_other_cabbage",
@@ -546,6 +547,32 @@ namespace Cosecha.EditorTools
             p.Rect(3, 1, 6, 1, shade);
             p.Set(2, 4, red);
             p.Rect(4, 3, 1, 3, red); p.Rect(6, 3, 2, 1, red); p.Rect(6, 5, 2, 1, red);   // "la"-ish marks
+            return p;
+        }
+
+        /// <summary>Generates only the magnifier icon (does not touch the other, possibly hand-edited art).</summary>
+        public static void GenerateMagnifier()
+        {
+            Directory.CreateDirectory(Folder);
+            Save("icon_magnifier", Magnifier(), V(0.5f, 0.5f));
+        }
+
+        /// <summary>Magnifying glass: brass ring with a light lens at the upper left, wooden handle to the lower right.</summary>
+        static Px Magnifier()
+        {
+            var p = new Px(16, 16);
+            Color32 ring = C(196, 148, 52), ringDark = C(132, 92, 30), glass = C(196, 228, 246), glare = C(250, 254, 255),
+                    wood = C(122, 76, 40), woodLit = C(166, 108, 60);
+            // handle first, so the ring covers its end
+            for (int i = 0; i < 6; i++)
+            {
+                p.Rect(9 + i, 5 - i, 2, 2, wood);
+                p.Set(9 + i, 6 - i, woodLit);
+            }
+            p.Disc(6.5f, 9.5f, 6.2f, 6.2f, ringDark);
+            p.Disc(6.3f, 9.7f, 5.6f, 5.6f, ring);
+            p.Disc(6.5f, 9.5f, 4.3f, 4.3f, glass);
+            p.Rect(4, 11, 2, 1, glare); p.Rect(4, 12, 1, 1, glare); p.Set(6, 12, glare);
             return p;
         }
 

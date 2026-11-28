@@ -14,7 +14,7 @@ namespace Cosecha.View
     public class HudView : MonoBehaviour
     {
         TextMeshProUGUI line1, line2, hint;
-        Button harvest;
+        Button harvest, grammar;
         GameController ctl;
         RectTransform hudRoot;
 
@@ -24,7 +24,7 @@ namespace Cosecha.View
             hudRoot = Ui.Rect("HudRoot", canvasRect).Stretch();
             var canvas = hudRoot;
             var panel = Ui.Panel("HUD", canvas);
-            panel.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(6, -6), new Vector2(408, 54));
+            panel.rectTransform.Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(6, -6), new Vector2(392, 54));
             Ui.VLayout(panel.gameObject, 0, new RectOffset(10, 10, 4, 4), TextAnchor.MiddleLeft);
             line1 = Ui.Text("Line1", panel.transform, "", 15);
             line2 = Ui.Text("Line2", panel.transform, "", 17);
@@ -32,11 +32,15 @@ namespace Cosecha.View
             foreach (var t in new[] { line1, line2 })
             {
                 t.textWrappingMode = TextWrappingModes.NoWrap;
-                t.enableAutoSizing = true; t.fontSizeMin = 11; t.fontSizeMax = t.fontSize;
+                t.enableAutoSizing = true; t.fontSizeMin = 10; t.fontSizeMax = t.fontSize;
             }
 
+            grammar = Ui.Button("Grammar", canvas, UiText.GrammarButton(0), 15, () => ctl.OnGrammarClicked(), Pal.ButtonAlt);
+            ((RectTransform)grammar.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(404, -6), new Vector2(112, 54));
+            grammar.gameObject.AddComponent<UiTooltipTrigger>().Text = () => UiText.GrammarButtonTip;
+
             harvest = Ui.Button("Harvest", canvas, UiText.Harvest, 22, () => ctl.OnHarvestClicked(), Pal.Gold);
-            ((RectTransform)harvest.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(420, -6), new Vector2(128, 54));
+            ((RectTransform)harvest.transform).Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(522, -6), new Vector2(118, 54));
             harvest.GetComponentInChildren<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
 
             hint = Ui.Text("Hint", canvas, "", 14, Color.white, TextAlignmentOptions.Center);
@@ -45,16 +49,18 @@ namespace Cosecha.View
             hint.outlineColor = new Color32(40, 30, 20, 255);
         }
 
-        public void Refresh(RunState run, bool canHarvest, string hintText)
+        public void Refresh(RunState run, bool canAct, string hintText)
         {
             if (run == null || run.Grid == null) return;
             double s = run.RoundScorePreview, t = run.Target;
             string scoreColor = ScoreCalculator.Reaches(s, t) ? "#3C963C" : "#BE463C";
-            line1.text = $"{UiText.HudRound(run.Round)}  ·  {UiText.HudRank(run.Rank)}  ·  {UiText.HudActions(run.ActionsLeft, run.MaxActions)}  ·  " +
+            line1.text = $"{UiText.HudRound(run.Round)}  ·  {UiText.HudRank(run.Rank)}  ·  {UiText.HudGrammar(run.GrammarActionsLeft)}  ·  " +
                          $"<color={(run.ScarecrowAvailable ? "#3A2A1E" : "#82705F")}>{UiText.HudScarecrow(run.ScarecrowAvailable)}</color>";
             line2.text = $"<color={scoreColor}>{UiText.HudScore(s, t)}</color>   <color=#B07F10>{UiText.HudGold(run.Gold)}</color> " +
                          $"<size=80%>({UiText.HudIncome(run.IncomePreview)})</size>";
-            harvest.interactable = canHarvest;
+            harvest.interactable = canAct;
+            grammar.SetLabel(UiText.GrammarButton(run.GrammarActionsLeft));
+            grammar.interactable = canAct && run.HasGrammarTarget;
             hint.text = hintText ?? "";
         }
 
@@ -65,19 +71,19 @@ namespace Cosecha.View
 
     /// <summary>
     /// Simplified, transparent shop in a full-height drawer that slides in from the right edge.
-    /// The handle sits on the drawer's left side and travels with it. Previews use the board's cell size.
+    /// The handle sits on the drawer's left side and travels with it. A 2×3 card grid: 5 word offers and the joker.
+    /// Bar previews use the board's cell size.
     /// </summary>
     public class ShopView : MonoBehaviour
     {
         GameController ctl;
-        RectTransform drawer, wordRow, otherRow;
+        RectTransform drawer, topRow, bottomRow;
         Button reroll, harvest;
         TextMeshProUGUI handleLabel, gold;
         bool open = true;
         public bool IsOpen => open;
 
-        const float PanelW = 600, Gap = 8, WordCardH = 276, HeaderH = 44;
-        static float WordCardW => (PanelW - 4 * Gap) / 3f;
+        const float PanelW = 600, Gap = 8, HeaderH = 44;
         const float OpenX = 0f, ClosedX = PanelW + 2f;
         // alpha blends much stronger than the number suggests in this URP 2D setup: 250 ≈ subtle see-through
         static readonly Color PanelColor = new Color32(22, 28, 40, 250);
@@ -86,6 +92,7 @@ namespace Cosecha.View
         static readonly Color Muted = new Color(1f, 1f, 1f, 0.6f);
         static readonly Color PointsColor = new Color32(255, 236, 160, 255);
         static readonly Color GoldColor = new Color32(246, 196, 70, 255);
+        static readonly Color HintColor = new Color32(150, 230, 140, 255);
 
         public void Init(GameController c, RectTransform canvas)
         {
@@ -125,24 +132,20 @@ namespace Cosecha.View
             reroll.GetComponent<Image>().sprite = Ui.Sprites.pixel;
             ((RectTransform)reroll.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-Gap - 118, -8), new Vector2(180, 32));
 
-            wordRow = Row("Words", -HeaderH, WordCardH);
-            otherRow = Row("Other", -HeaderH - WordCardH - Gap, 0);
-            // the second row stretches to the bottom of the screen
-            otherRow.anchorMin = new Vector2(0, 0);
-            otherRow.anchorMax = new Vector2(1, 1);
-            otherRow.offsetMin = new Vector2(Gap, Gap);
-            otherRow.offsetMax = new Vector2(-Gap, -HeaderH - WordCardH - Gap);
+            topRow = Row("Top", true);
+            bottomRow = Row("Bottom", false);
             UpdateHandleLabel();
         }
 
-        RectTransform Row(string name, float y, float h)
+        /// <summary>A card row filling the upper or lower half of the drawer below the header.</summary>
+        RectTransform Row(string name, bool top)
         {
             var r = Ui.Rect(name, drawer);
-            r.anchorMin = new Vector2(0, 1);
-            r.anchorMax = new Vector2(1, 1);
-            r.pivot = new Vector2(0.5f, 1);
-            r.offsetMin = new Vector2(Gap, y - h);
-            r.offsetMax = new Vector2(-Gap, y);
+            r.anchorMin = new Vector2(0, top ? 0.5f : 0f);
+            r.anchorMax = new Vector2(1, top ? 1f : 0.5f);
+            // the header takes HeaderH at the top; split the rest evenly
+            r.offsetMin = new Vector2(Gap, top ? -HeaderH / 2f + Gap / 2f : Gap);
+            r.offsetMax = new Vector2(-Gap, top ? -HeaderH : -HeaderH / 2f - Gap / 2f);
             var hl = Ui.HLayout(r.gameObject, Gap, TextAnchor.UpperLeft);
             hl.childForceExpandWidth = true;
             hl.childForceExpandHeight = true;
@@ -171,20 +174,21 @@ namespace Cosecha.View
         public void Refresh(RunState run, bool interactive)
         {
             if (run == null) return;
-            Ui.Clear(wordRow);
-            Ui.Clear(otherRow);
+            Ui.Clear(topRow);
+            Ui.Clear(bottomRow);
             gold.text = UiText.HudGold(run.Gold);
             reroll.SetLabel(UiText.Reroll(run.RerollPrice));
             reroll.interactable = interactive && run.CanAfford(run.RerollPrice);
             harvest.interactable = interactive;
 
-            for (int i = 0; i < run.Cfg.wordOfferCount; i++)
+            int n = run.Cfg.wordOfferCount;
+            for (int i = 0; i < n; i++)
             {
-                if (i < run.Shop.Words.Count) WordCard(run, run.Shop.Words[i], interactive);
-                else EmptyCard(UiText.NoMoreWords);
+                var row = i < 3 ? topRow : bottomRow;
+                if (i < run.Shop.Words.Count) WordCard(row, run, run.Shop.Words[i], interactive);
+                else EmptyCard(row, UiText.NoMoreWords);
             }
             JokerCard(run, interactive);
-            foreach (var o in run.Shop.Upgrades) UpgradeCard(run, o, interactive);
         }
 
         RectTransform Card(RectTransform row, bool enabled, Func<string> tooltip = null)
@@ -204,15 +208,15 @@ namespace Cosecha.View
             t.rectTransform.offsetMin = new Vector2(6, -y - h);
             t.rectTransform.offsetMax = new Vector2(-6, -y);
             t.textWrappingMode = TextWrappingModes.NoWrap;
-            t.enableAutoSizing = true; t.fontSizeMin = 12; t.fontSizeMax = size;
+            t.enableAutoSizing = true; t.fontSizeMin = 11; t.fontSizeMax = size;
             if (bold) t.fontStyle = FontStyles.Bold;
             return t;
         }
 
-        void EmptyCard(string text)
+        void EmptyCard(RectTransform row, string text)
         {
-            var c = Card(wordRow, false);
-            Txt(c, text, 18, 100, 30, Muted);
+            var c = Card(row, false);
+            Txt(c, text, 18, 60, 30, Muted);
         }
 
         void CardButton(RectTransform c, string label, Action onClick, bool interactable, Func<string> tooltip = null)
@@ -224,44 +228,55 @@ namespace Cosecha.View
             rt.anchorMax = new Vector2(1, 0);
             rt.pivot = new Vector2(0.5f, 0);
             rt.offsetMin = new Vector2(10, 8);
-            rt.offsetMax = new Vector2(-10, 8 + 34);
+            rt.offsetMax = new Vector2(-10, 8 + 32);
             b.GetComponentInChildren<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
             b.interactable = interactable;
             if (tooltip != null) b.gameObject.AddComponent<UiTooltipTrigger>().Text = tooltip;
         }
 
-        /// <summary>Preview of the space the word takes, at the same cell size as the board.</summary>
-        void ShapePreview(RectTransform card, WordType type, ShapeFamily family, int size, float y, float h)
+        /// <summary>Preview of the bar the word takes, at the same cell size as the board, with its outline.</summary>
+        void BarPreview(RectTransform card, WordType type, int size, float y)
         {
-            var area = Ui.Rect("Shape", card);
-            area.anchorMin = new Vector2(0, 1);
-            area.anchorMax = new Vector2(1, 1);
-            area.pivot = new Vector2(0.5f, 1);
-            area.offsetMin = new Vector2(4, -y - h);
-            area.offsetMax = new Vector2(-4, -y);
-            var cells = Shapes.LocalCells(family, size, 0);
-            int minX = cells.Min(p => p.x), maxX = cells.Max(p => p.x), minY = cells.Min(p => p.y), maxY = cells.Max(p => p.y);
             float cell = IsoLayout.BoardCellCanvas;
-            var mid = new Vector2((minX + maxX) / 2f, (minY + maxY) / 2f);
-            foreach (var p in cells)
+            var area = Ui.Rect("Bar", card);
+            area.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -y), new Vector2(size * cell, cell));
+            for (int i = 0; i < size; i++)
             {
-                var pos = (new Vector2(p.x, p.y) - mid) * cell;
+                var pos = new Vector2((i + 0.5f) * cell, -cell / 2f);
                 var bg = Ui.Image("Cell", area, new Color32(122, 84, 54, 150), Ui.Sprites.boardCell, false);
-                bg.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, Vector2.one * cell);
+                bg.rectTransform.Place(new Vector2(0, 1), new Vector2(0.5f, 0.5f), pos, Vector2.one * cell);
                 var icon = Ui.Image("Icon", area, Color.white, Ui.Sprites.Icon(type), false);
-                icon.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, Vector2.one * cell * 0.9f);
+                icon.rectTransform.Place(new Vector2(0, 1), new Vector2(0.5f, 0.5f), pos, Vector2.one * cell * 0.9f);
             }
+            // one continuous outline around all cells
+            var col = SpriteSet.OutlineColor(type);
+            const float t = 2.5f;
+            void Edge(Vector2 anchorMin, Vector2 anchorMax, Vector2 sizeDelta)
+            {
+                var e = Ui.Image("Outline", area, col, Ui.Sprites.pixel, false);
+                e.rectTransform.anchorMin = anchorMin;
+                e.rectTransform.anchorMax = anchorMax;
+                e.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                e.rectTransform.anchoredPosition = Vector2.zero;
+                e.rectTransform.sizeDelta = sizeDelta;
+            }
+            Edge(new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, t));
+            Edge(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, t));
+            Edge(new Vector2(0, 0), new Vector2(0, 1), new Vector2(t, 0));
+            Edge(new Vector2(1, 0), new Vector2(1, 1), new Vector2(t, 0));
         }
 
-        void WordCard(RunState run, WordOffer o, bool interactive)
+        void WordCard(RectTransform row, RunState run, WordOffer o, bool interactive)
         {
             bool afford = run.CanAfford(o.Stats.Price);
-            var c = Card(wordRow, o.Available && afford);
-            Txt(c, o.Prompt, 28, 6, 34, Color.white, true);
+            bool completes = run.Shop.Completing.Contains(o.Entry.Id);
+            var c = Card(row, o.Available && afford, () => UiText.WordCardTip(o) + (completes ? "\n" + UiText.CompletesHint : ""));
+            Txt(c, o.NoQuiz ? o.Entry.Es : o.Prompt, 26, 6, 32, Color.white, true);
+            Txt(c, $"<color=#{ColorUtility.ToHtmlStringRGB(SpriteSet.TypeColor(o.Entry.Type))}>{UiText.TypeName(o.Entry.Type)}</color>", 15, 38, 18, Color.white);
             Txt(c, $"<color=#{ColorUtility.ToHtmlStringRGB(PointsColor)}>{o.Stats.BasePoints} Pkt</color>   " +
-                   $"<color=#{ColorUtility.ToHtmlStringRGB(GoldColor)}>{o.Stats.Gold} Gold</color>", 21, 40, 24, Color.white);
-            // 5 cells is the tallest shape (corner family) → 5 × cell = 160 canvas units
-            ShapePreview(c, o.Entry.Type, o.Family, o.Stats.UnmoddedSize, 66, 5 * IsoLayout.BoardCellCanvas);
+                   $"<color=#{ColorUtility.ToHtmlStringRGB(GoldColor)}>{o.Stats.Gold} Gold</color>", 19, 58, 22, Color.white);
+            BarPreview(c, o.Entry.Type, o.Stats.BaseSize, 86);
+            if (completes) Txt(c, "★ " + UiText.CompletesShort, 13, 86 + IsoLayout.BoardCellCanvas + 4, 16, HintColor);
             string label = o.Sold ? UiText.Sold : o.Missed ? UiText.Missed : UiText.Price(o.Stats.Price);
             CardButton(c, label, () => ctl.OnBuyWord(o), interactive && o.Available && afford,
                 () => o.Available && !run.CanAfford(o.Stats.Price) ? UiText.NotEnoughGold : null);
@@ -270,28 +285,12 @@ namespace Cosecha.View
         void JokerCard(RunState run, bool interactive)
         {
             var j = run.Shop.Joker;
-            if (j == null) { Card(otherRow, false); return; }
-            var c = Card(otherRow, j.Available, () => UiText.JokerCard(j.Type, run.Cfg.jokerDiscount));
-            Txt(c, $"{UiText.JokerTitle}: <color=#{ColorUtility.ToHtmlStringRGB(SpriteSet.TypeColor(j.Type))}>{UiText.TypeName(j.Type)}</color>",
-                22, 6, 28, GoldColor, true);
-            Txt(c, UiText.AttemptsLeft(j.AttemptsLeft), 15, 34, 18, Muted);
+            if (j == null) { Card(bottomRow, false); return; }
+            var c = Card(bottomRow, j.Available, () => UiText.JokerCard(j.Type, run.Cfg.jokerDiscount));
+            Txt(c, UiText.JokerTitle, 24, 6, 30, GoldColor, true);
+            Txt(c, $"<color=#{ColorUtility.ToHtmlStringRGB(SpriteSet.TypeColor(j.Type))}>{UiText.TypeName(j.Type)}</color>", 20, 38, 24, Color.white, true);
+            Txt(c, UiText.AttemptsLeft(j.AttemptsLeft), 15, 66, 18, Muted);
             CardButton(c, j.Available ? UiText.JokerEnter : UiText.JokerUsed, () => ctl.OnJoker(), interactive && j.Available);
-        }
-
-        void UpgradeCard(RunState run, UpgradeOffer o, bool interactive)
-        {
-            string why = run.WhyCannotBuy(o);
-            var c = Card(otherRow, why == null, () => UiText.OfferEffect(o, run.Cfg));
-            bool rare = o.Kind == OfferKind.XMult || o.Kind == OfferKind.FieldExpansion || o.Kind == OfferKind.ExtraAction;
-            Txt(c, UiText.OfferName(o), 22, 6, 28, rare ? new Color32(220, 170, 255, 255) : Color.white, true);
-            if (o.Kind == OfferKind.ArticleMod || o.Kind == OfferKind.ConjugationMod)
-            {
-                var icon = Ui.Image("Icon", c, Color.white, o.Kind == OfferKind.ArticleMod ? Ui.Sprites.articleIcon : Ui.Sprites.starIcon, false);
-                icon.preserveAspect = true;
-                icon.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -34), new Vector2(20, 20));
-            }
-            CardButton(c, o.Sold ? UiText.Sold : UiText.Price(run.PriceOf(o)), () => ctl.OnBuyUpgrade(o), interactive && why == null,
-                () => run.WhyCannotBuy(o));
         }
 
         public void SetVisible(bool v) => drawer.gameObject.SetActive(v);
@@ -543,6 +542,215 @@ namespace Cosecha.View
         }
     }
 
+    // ==================================================================== Dictionary search (practice mode only)
+
+    /// <summary>
+    /// Button in the lower-left corner that opens a dictionary panel covering the left half of the screen.
+    /// Looks up German or Spanish words and shows every field of the matching vocabulary entries.
+    /// </summary>
+    public class SearchView : MonoBehaviour
+    {
+        const int MaxResults = 40;
+        const float HeaderH = 44, InputH = 30, StatusH = 22, Pad = 10;
+
+        Func<VocabularyDatabase> vocab;
+        RectTransform root, panel, content;
+        Button openButton;
+        TMP_InputField input;
+        TextMeshProUGUI status;
+        ScrollRect scroll;
+
+        public bool IsOpen => panel != null && panel.gameObject.activeSelf;
+
+        public void Init(Func<VocabularyDatabase> vocabulary, RectTransform canvas)
+        {
+            vocab = vocabulary;
+            root = Ui.Rect("Search", canvas).Stretch();
+
+            openButton = Ui.Button("SearchButton", root, UiText.SearchButton, 16, Open, Pal.ButtonAlt);
+            ((RectTransform)openButton.transform).Place(Vector2.zero, Vector2.zero, new Vector2(6, 6), new Vector2(130, 34));
+            openButton.GetComponentInChildren<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
+
+            // panel: from the left edge to the middle of the screen, full height
+            var bg = Ui.Panel("SearchPanel", root);
+            panel = bg.rectTransform;
+            panel.anchorMin = Vector2.zero;
+            panel.anchorMax = new Vector2(0.5f, 1f);
+            panel.pivot = new Vector2(0, 0.5f);
+            panel.offsetMin = Vector2.zero;
+            panel.offsetMax = Vector2.zero;
+
+            var title = Ui.Text("Title", panel, UiText.SearchTitle, 22, Pal.Text, TextAlignmentOptions.MidlineLeft);
+            title.fontStyle = FontStyles.Bold;
+            TopStrip(title.rectTransform, Pad, HeaderH, Pad, 120);
+
+            var close = Ui.Button("Close", panel, UiText.Close, 15, Close, Pal.ButtonDanger);
+            ((RectTransform)close.transform).Place(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-Pad, -Pad + 2), new Vector2(110, 32));
+
+            input = Ui.Input("Query", panel, 16, UiText.SearchPlaceholder);
+            TopStrip((RectTransform)input.transform, HeaderH + 4, InputH, Pad, Pad);
+            input.onValueChanged.AddListener(_ => Refresh());
+
+            status = Ui.Text("Status", panel, UiText.SearchEmptyQuery, 13, Pal.TextMuted, TextAlignmentOptions.MidlineLeft);
+            TopStrip(status.rectTransform, HeaderH + InputH + 8, StatusH, Pad, Pad);
+
+            BuildScroll(HeaderH + InputH + StatusH + 12);
+            panel.gameObject.SetActive(false);
+            root.gameObject.SetActive(false);
+        }
+
+        /// <summary>Stretches <paramref name="rt"/> horizontally across the panel at a fixed distance from the top.</summary>
+        static void TopStrip(RectTransform rt, float top, float height, float left, float right)
+        {
+            rt.anchorMin = new Vector2(0, 1);
+            rt.anchorMax = new Vector2(1, 1);
+            rt.pivot = new Vector2(0.5f, 1);
+            rt.offsetMin = new Vector2(left, -top - height);
+            rt.offsetMax = new Vector2(-right, -top);
+        }
+
+        void BuildScroll(float top)
+        {
+            var area = Ui.Image("Results", panel, new Color(0, 0, 0, 0));   // transparent, catches the scroll wheel
+            var rt = area.rectTransform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(Pad, Pad);
+            rt.offsetMax = new Vector2(-Pad, -top);
+
+            var viewport = Ui.Rect("Viewport", rt).Stretch();
+            viewport.gameObject.AddComponent<RectMask2D>();
+
+            content = Ui.Rect("Content", viewport);
+            content.anchorMin = new Vector2(0, 1);
+            content.anchorMax = new Vector2(1, 1);
+            content.pivot = new Vector2(0.5f, 1);
+            content.offsetMin = content.offsetMax = Vector2.zero;
+            Ui.VLayout(content.gameObject, 6, new RectOffset(0, 0, 0, 4), TextAnchor.UpperLeft);
+            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            scroll = area.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport;
+            scroll.content = content;
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 35;
+        }
+
+        /// <summary>The dictionary is only offered during a run in practice mode (not in exam mode).</summary>
+        public void SetAvailable(bool available)
+        {
+            if (!available) Close();
+            root.gameObject.SetActive(available);
+        }
+
+        public void Open()
+        {
+            panel.gameObject.SetActive(true);
+            openButton.gameObject.SetActive(false);
+            Refresh();
+            input.Select();
+            input.ActivateInputField();
+        }
+
+        public void Close()
+        {
+            if (input.isFocused) input.DeactivateInputField();
+            panel.gameObject.SetActive(false);
+            openButton.gameObject.SetActive(true);
+        }
+
+        void Refresh()
+        {
+            Ui.Clear(content);
+            string q = input.text?.Trim() ?? "";
+            var db = vocab();
+            if (q.Length == 0 || db == null) { status.text = UiText.SearchEmptyQuery; return; }
+            var hits = db.Search(q, MaxResults);
+            status.text = hits.Count == 0 ? UiText.SearchNoResults(q) : UiText.SearchResultCount(hits.Count, MaxResults);
+            foreach (var e in hits)
+            {
+                var card = Ui.Image("Entry", content, Pal.Card, Ui.Sprites.button, false);
+                Ui.VLayout(card.gameObject, 0, new RectOffset(10, 10, 6, 8), TextAnchor.UpperLeft);
+                var t = Ui.Text("Text", card.transform, UiText.VocabDetails(e), 14, Pal.Text, TextAlignmentOptions.TopLeft);
+                t.textWrappingMode = TextWrappingModes.Normal;
+            }
+            scroll.verticalNormalizedPosition = 1;
+        }
+    }
+
+    // ==================================================================== Magnifier ("Lupe")
+
+    /// <summary>
+    /// Button in the lower-left corner that picks up the magnifier. While held, a magnifier icon follows the cursor;
+    /// the controller shows the structures of the hovered word in the tooltip.
+    /// </summary>
+    public class MagnifierView : MonoBehaviour
+    {
+        RectTransform root, cursorIcon, canvas;
+        Button button;
+        Camera cam;
+        bool held, enabledNow;
+
+        public void Init(GameController ctl, RectTransform canvasRect, Camera camera)
+        {
+            canvas = canvasRect; cam = camera;
+            root = Ui.Rect("Magnifier", canvas).Stretch();
+
+            button = Ui.Button("MagnifierButton", root, UiText.MagnifierButton, 16, ctl.OnMagnifierClicked, Pal.ButtonAlt);
+            button.GetComponentInChildren<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
+            button.gameObject.AddComponent<UiTooltipTrigger>().Text = () =>
+                held ? null : enabledNow ? UiText.MagnifierActiveTip : UiText.MagnifierTip;
+
+            if (Ui.Sprites.magnifier != null)
+            {
+                var icon = Ui.Image("MagnifierCursor", root, Color.white, Ui.Sprites.magnifier, false);
+                icon.preserveAspect = true;
+                cursorIcon = icon.rectTransform;
+                // pivot at the lens centre, so the lens sits on the hovered word
+                cursorIcon.Place(new Vector2(0.5f, 0.5f), new Vector2(0.4f, 0.6f), Vector2.zero, new Vector2(40, 40));
+                cursorIcon.gameObject.SetActive(false);
+            }
+            root.gameObject.SetActive(false);
+        }
+
+        public void SetVisible(bool v)
+        {
+            root.gameObject.SetActive(v);
+            if (!v) SetHeld(false);
+        }
+
+        /// <param name="enabled">The magnifier can be picked up (planning mode, at least one structure on the field).</param>
+        /// <param name="searchVisible">The dictionary button takes the corner; the magnifier sits to its right.</param>
+        public void Refresh(bool enabled, bool isHeld, bool searchVisible)
+        {
+            enabledNow = enabled;
+            SetHeld(isHeld);
+            button.interactable = enabled || isHeld;
+            ((RectTransform)button.transform).Place(Vector2.zero, Vector2.zero, new Vector2(searchVisible ? 142 : 6, 6), new Vector2(110, 34));
+        }
+
+        void SetHeld(bool value)
+        {
+            held = value;
+            button.SetLabel(held ? UiText.MagnifierPutDown : UiText.MagnifierButton);
+            if (cursorIcon != null)
+            {
+                cursorIcon.gameObject.SetActive(held);
+                if (held) { cursorIcon.SetAsLastSibling(); Follow(); }
+            }
+        }
+
+        void LateUpdate() { if (held) Follow(); }
+
+        void Follow()
+        {
+            if (cursorIcon == null || Mouse.current == null) return;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(canvas, Mouse.current.position.ReadValue(), cam, out var local);
+            cursorIcon.anchoredPosition = local;
+        }
+    }
+
     // ==================================================================== Menus
 
     public class MainMenuView : MonoBehaviour
@@ -637,7 +845,7 @@ namespace Cosecha.View
 
         public void Show(RunState run)
         {
-            stats.text = UiText.GameOverStats(run.Rank, run.Round, run.WordsPlanted, run.ModsLearned);
+            stats.text = UiText.GameOverStats(run.Rank, run.Round, run.WordsPlanted, run.GrammarLearned);
             root.gameObject.SetActive(true);
             root.SetAsLastSibling();
         }
@@ -650,20 +858,22 @@ namespace Cosecha.View
     public class DebugOverlay : MonoBehaviour
     {
         RectTransform root;
+        TextMeshProUGUI structures;
 
         public void Init(GameController ctl, RectTransform canvas)
         {
             var panel = Ui.Panel("Debug", canvas, new Color32(30, 30, 40, 230));
             root = panel.rectTransform;
-            root.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, -20), new Vector2(170, 300));
+            root.Place(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, -20), new Vector2(230, 380));
             Ui.VLayout(panel.gameObject, 4, new RectOffset(8, 8, 8, 8), TextAnchor.UpperCenter);
             Ui.Text("Title", root, UiText.DebugTitle, 14, Color.white, TextAlignmentOptions.Center);
             void Btn(string label, Action a)
             {
                 var b = Ui.Button(label, root, label, 12, a, new Color32(80, 80, 100, 255));
-                Ui.Size(b, -1, 26);
+                Ui.Size(b, -1, 22);
             }
             Btn(UiText.DebugGold, ctl.DebugAddGold);
+            Btn(UiText.DebugGrammar, ctl.DebugAddGrammar);
             Btn(UiText.DebugRoundDown, () => ctl.DebugChangeRound(-1));
             Btn(UiText.DebugRoundUp, () => ctl.DebugChangeRound(+1));
             Btn(UiText.DebugPass, () => ctl.DebugForceHarvest(ForcedOutcome.Pass));
@@ -671,7 +881,22 @@ namespace Cosecha.View
             Btn(UiText.DebugRefill, ctl.DebugRefillShop);
             Btn(UiText.DebugReload, ctl.DebugReloadVocabulary);
             Btn(UiText.DebugLabels, ctl.DebugToggleLabels);
+            Ui.Text("StructTitle", root, UiText.DebugStructuresTitle, 13, Color.white, TextAlignmentOptions.Left).fontStyle = FontStyles.Bold;
+            structures = Ui.Text("Structures", root, UiText.DebugNoStructures, 11, new Color(1, 1, 1, 0.85f), TextAlignmentOptions.TopLeft);
+            structures.textWrappingMode = TextWrappingModes.Normal;
+            structures.enableAutoSizing = true; structures.fontSizeMin = 7; structures.fontSizeMax = 11;
+            Ui.Size(structures, -1, 110);
             root.gameObject.SetActive(false);
+        }
+
+        /// <summary>Lists every detected structure with its direction and words.</summary>
+        public void Refresh(RunState run)
+        {
+            if (structures == null) return;
+            var list = run?.Grid != null ? run.Analysis.Structures : null;
+            structures.text = list == null || list.Count == 0
+                ? UiText.DebugNoStructures
+                : string.Join("\n", list.OrderByDescending(x => (int)x.Category).Select(UiText.StructureLine));
         }
 
         public void Toggle()

@@ -37,6 +37,7 @@ namespace Cosecha.View
         public Sprite sign;
         public Sprite articleIcon;
         public Sprite starIcon;
+        public Sprite magnifier;
 
         [Header("Ground field (isometric, decoration)")]
         public Sprite soilTile;
@@ -50,7 +51,7 @@ namespace Cosecha.View
 
         public Sprite Cloud(int i) => i <= 0 ? cloudSmall : i == 1 ? cloudMedium : cloudLarge;
 
-        /// <summary>Badge color on the sign so word types stay distinguishable (synergy ring).</summary>
+        /// <summary>Badge color on the sign so word types stay distinguishable.</summary>
         public static Color TypeColor(WordType t)
         {
             switch (t)
@@ -59,8 +60,21 @@ namespace Cosecha.View
                 case WordType.Verb: return new Color32(82, 168, 72, 255);
                 case WordType.Adjective: return new Color32(230, 112, 40, 255);
                 case WordType.Phrase: return new Color32(150, 110, 200, 255);
+                case WordType.Pronoun: return new Color32(70, 140, 210, 255);
+                case WordType.Article: return new Color32(90, 190, 190, 255);
+                case WordType.Conjunction: return new Color32(210, 90, 140, 255);
+                case WordType.QuestionWord: return new Color32(200, 70, 70, 255);
                 default: return new Color32(150, 160, 175, 255);
             }
+        }
+
+        /// <summary>Darker shade of the badge color, used for the outline around a word's cells.</summary>
+        public static Color OutlineColor(WordType t)
+        {
+            Color.RGBToHSV(TypeColor(t), out float h, out float s, out float v);
+            var c = Color.HSVToRGB(h, Mathf.Min(1f, s * 1.1f), v * 0.55f);
+            c.a = 1f;
+            return c;
         }
     }
 }

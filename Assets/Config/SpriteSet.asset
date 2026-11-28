@@ -32,6 +32,7 @@ MonoBehaviour:
   sign: {fileID: 21300000, guid: 47cdef11b87c95347aff7ef166cf4b7a, type: 3}
   articleIcon: {fileID: 21300000, guid: cf5983bfda012014996cf552600a6e2a, type: 3}
   starIcon: {fileID: 21300000, guid: f70cdfa91fd63994f867e0d73b16bf90, type: 3}
+  magnifier: {fileID: 21300000, guid: 30ea65e1787db694f83a72df3ea7b1e3, type: 3}
   soilTile: {fileID: 21300000, guid: 5bc8de3d6adff0546a370a5769cc4af1, type: 3}
   wheat: {fileID: 21300000, guid: c8ecf1797a1995b43b8315d365b1d4f6, type: 3}
   lavender: {fileID: 21300000, guid: 09a192274fdb25e44a071ecba117bdcc, type: 3}

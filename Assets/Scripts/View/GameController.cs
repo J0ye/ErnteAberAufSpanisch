@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Cosecha.View;
@@ -14,14 +15,16 @@ namespace Cosecha
 {
     /// <summary>
     /// Owns the RunState, builds the presentation and forwards input to the rules.
-    /// All game rules live in RunState and the calculators.
+    /// All game rules live in RunState, the calculators and the SentenceEngine.
     /// </summary>
     public class GameController : MonoBehaviour
     {
         [SerializeField] BalanceConfig config;
         [SerializeField] SpriteSet sprites;
 
-        enum Mode { Menu, Planning, Holding, Targeting, Modal, Harvesting, GameOver }
+        enum Mode { Menu, Planning, Holding, Targeting, Inspecting, Modal, Harvesting, GameOver }
+
+        const string VocabularyFile = "Assets/Resources/Vocabulary/vocabulary.json";
 
         public BalanceConfig Cfg => config;
         RunState run;
@@ -39,6 +42,8 @@ namespace Cosecha
         MainMenuView menu;
         GameOverView gameOver;
         DebugOverlay debugOverlay;
+        SearchView search;
+        MagnifierView magnifier;
         TextMeshProUGUI bigText;
         Leaderboard leaderboard;
         RunLogger logger;
@@ -48,17 +53,12 @@ namespace Cosecha
         bool heldIsNew;
         WordLocation originLocation;
         Vector2Int originAnchor;
-        int originRotation;
         int originSlot;
-        int heldRotation;
         Vector2Int grabOffset;
-
-        // mod targeting
-        UpgradeOffer pendingMod;
-        int pendingModPrice;
 
         bool skipHarvest;
         bool worldTooltipShown;
+        Coroutine bannerRoutine;
 
         const string ExamModePref = "Cosecha.ExamMode";
         /// <summary>True = exam mode (default): no answer help in quizzes.</summary>
@@ -90,7 +90,7 @@ namespace Cosecha
             skyGo.AddComponent<SkyView>().Init(sprites, config);
             var fieldGo = new GameObject("Field");
             field = fieldGo.AddComponent<FieldView>();
-            field.Init(sprites);
+            field.Init(sprites, config);
 
             BuildCanvas();
         }
@@ -126,6 +126,9 @@ namespace Cosecha
             bigText.outlineColor = new Color32(40, 25, 10, 255);
 
             debugOverlay = canvasGo.AddComponent<DebugOverlay>(); debugOverlay.Init(this, canvasRect);
+            // the magnifier is created first, so the open dictionary panel covers its button
+            magnifier = canvasGo.AddComponent<MagnifierView>(); magnifier.Init(this, canvasRect, cam);
+            search = canvasGo.AddComponent<SearchView>(); search.Init(() => vocab, canvasRect);
             menu = canvasGo.AddComponent<MainMenuView>(); menu.Init(this, canvasRect);
             gameOver = canvasGo.AddComponent<GameOverView>(); gameOver.Init(this, canvasRect);
             dialog = canvasGo.AddComponent<Dialog>(); dialog.Init(canvasRect);
@@ -147,8 +150,9 @@ namespace Cosecha
                 var ta = Resources.Load<TextAsset>("Vocabulary/vocabulary");
                 json = ta != null ? ta.text : "{}";
             }
-            var db = VocabularyLoader.Parse(json);
-            foreach (var w in db.Warnings) Debug.LogWarning("[Vokabeln] " + w);
+            var db = VocabularyLoader.Parse(json, VocabularyFile);
+            if (db.Error != null) Debug.LogError("[Vokabeln] " + db.Error);
+            foreach (var w in db.Warnings.Where(w => w != db.Error)) Debug.LogWarning("[Vokabeln] " + w);
             return db;
         }
 
@@ -164,6 +168,8 @@ namespace Cosecha
             field.Rebuild(null);
             hud.SetVisible(false);
             shop.SetVisible(false);
+            search.SetAvailable(false);
+            magnifier.SetVisible(false);
             gameOver.Hide();
             leaderboard.Load();
             menu.Show(leaderboard.Top(config.leaderboardSize), ExamMode);
@@ -171,7 +177,7 @@ namespace Cosecha
 
         public void NewGame()
         {
-            if (vocab.Entries.Count == 0) { toast.Show("Keine gültigen Vokabeln geladen."); return; }
+            if (vocab.Entries.Count == 0) { toast.Show(vocab.Error ?? UiText.NoVocabulary, 6f); return; }
             run = new RunState(config, vocab, new SystemRng());
             run.StartNewRun();
             runIsPractice = !ExamMode;
@@ -180,8 +186,10 @@ namespace Cosecha
             hud.SetVisible(true);
             shop.SetVisible(true);
             shop.SetOpen(true);
+            search.SetAvailable(!ExamMode);   // the dictionary is a learning aid: practice mode only
+            magnifier.SetVisible(true);
             mode = Mode.Planning;
-            RefreshAll();
+            RefreshAll(false);
         }
 
         public void BackToMenu() => ShowMenu();
@@ -195,12 +203,19 @@ namespace Cosecha
 #endif
         }
 
-        void RefreshAll()
+        /// <summary>Redraws everything. The sentence engine re-runs on the new field; new structures pop in.</summary>
+        void RefreshAll(bool animateStructures = true)
         {
-            field.Rebuild(run);
-            string hint = mode == Mode.Holding ? UiText.HoldingHint : mode == Mode.Targeting ? UiText.TargetingHint : "";
+            field.Rebuild(run, animateStructures);
+            string hint = mode == Mode.Holding ? UiText.HoldingHint
+                : mode == Mode.Targeting ? UiText.GrammarTargetHint
+                : mode == Mode.Inspecting ? UiText.MagnifierHint
+                : mode == Mode.Planning ? UiText.PlanningHint : "";
             hud.Refresh(run, mode == Mode.Planning, hint);
             shop.Refresh(run, mode == Mode.Planning);
+            debugOverlay.Refresh(run);
+            magnifier.Refresh(run != null && mode == Mode.Planning && run.Analysis.Structures.Count > 0,
+                mode == Mode.Inspecting, !ExamMode);
         }
 
         // ================================================================ input
@@ -209,7 +224,9 @@ namespace Cosecha
         {
             var kb = Keyboard.current;
             var mouse = Mouse.current;
-            if (kb != null && kb.f1Key.wasPressedThisFrame) debugOverlay.Toggle();
+            if (kb != null && kb.f1Key.wasPressedThisFrame) { debugOverlay.Toggle(); debugOverlay.Refresh(run); }
+            // Escape closes the dictionary first (and nothing else that frame)
+            if (kb != null && kb.escapeKey.wasPressedThisFrame && search.IsOpen && !dialog.IsOpen) { search.Close(); return; }
             if (mouse == null) return;
 
             if (mode == Mode.Harvesting)
@@ -217,39 +234,36 @@ namespace Cosecha
                 if (mouse.leftButton.wasPressedThisFrame) skipHarvest = true;
                 return;
             }
-            if (run == null || (mode != Mode.Planning && mode != Mode.Holding && mode != Mode.Targeting)) return;
+            if (run == null || (mode != Mode.Planning && mode != Mode.Holding && mode != Mode.Targeting && mode != Mode.Inspecting)) return;
 
             Vector2 mp = mouse.position.ReadValue();
             Vector2 world = cam.ScreenToWorldPoint(new Vector3(mp.x, mp.y, -cam.transform.position.z));
             bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-            var cell = FieldView.FieldGrid.WorldToCell(world);
 
             switch (mode)
             {
                 case Mode.Planning: UpdatePlanning(world, overUi, mouse); break;
                 case Mode.Holding: UpdateHolding(world, overUi, mouse, kb); break;
-                case Mode.Targeting: UpdateTargeting(world, cell, overUi, mouse, kb); break;
+                case Mode.Targeting: UpdateTargeting(world, overUi, mouse, kb); break;
+                case Mode.Inspecting: UpdateInspecting(world, overUi, mouse, kb); break;
             }
         }
 
         /// <summary>Which grid (field or shed) the cursor is over, and the cell in it.</summary>
-        bool GridAt(Vector2 world, out GridModel grid, out FlatGrid iso, out Vector2Int cell)
+        bool GridAt(Vector2 world, out GridModel grid, out FlatGrid flat, out Vector2Int cell)
         {
             cell = FieldView.FieldGrid.WorldToCell(world);
-            if (run.Grid.IsInside(cell)) { grid = run.Grid; iso = FieldView.FieldGrid; return true; }
+            if (run.Grid.IsInside(cell)) { grid = run.Grid; flat = FieldView.FieldGrid; return true; }
             cell = FieldView.ShedGrid.WorldToCell(world);
-            if (run.Shed.IsInside(cell)) { grid = run.Shed; iso = FieldView.ShedGrid; return true; }
-            grid = null; iso = null;
+            if (run.Shed.IsInside(cell)) { grid = run.Shed; flat = FieldView.ShedGrid; return true; }
+            grid = null; flat = null;
             return false;
         }
 
-        WordInstance WordAt(Vector2 world, Vector2Int unused = default)
+        WordInstance WordAt(Vector2 world)
         {
             if (GridAt(world, out var grid, out _, out var cell))
-            {
-                var w = grid.OccupantAt(cell);
-                if (w != null) return w;
-            }
+                return grid.OccupantAt(cell);
             return null;
         }
 
@@ -271,10 +285,16 @@ namespace Cosecha
         {
             var hovered = overUi ? null : WordAt(world);
             UpdateWorldTooltip(hovered, overUi);
-            if (!overUi && hovered != null && mouse.leftButton.wasPressedThisFrame)
+            if (overUi || hovered == null) return;
+            if (mouse.leftButton.wasPressedThisFrame)
             {
                 GridAt(world, out _, out _, out var cell);
                 PickUpExisting(hovered, cell);
+            }
+            else if (mouse.rightButton.wasPressedThisFrame && RunState.IsGrammarTarget(hovered))
+            {
+                if (run.GrammarActionsLeft <= 0) toast.Show(UiText.NoGrammarAction);
+                else OpenGrammarQuiz(hovered);
             }
         }
 
@@ -283,10 +303,8 @@ namespace Cosecha
             heldIsNew = false;
             originLocation = w.Location;
             originAnchor = w.Anchor;
-            originRotation = w.Rotation;
             originSlot = w.WheelbarrowSlot;
-            heldRotation = w.Rotation;
-            grabOffset = w.Location == WordLocation.Grid || w.Location == WordLocation.Shed ? w.Anchor - clickedCell : Vector2Int.zero;
+            grabOffset = w.Location == WordLocation.Grid || w.Location == WordLocation.Shed ? new Vector2Int(w.Anchor.x - clickedCell.x, 0) : Vector2Int.zero;
             run.PickUp(w);
             BeginHolding(w);
         }
@@ -295,7 +313,6 @@ namespace Cosecha
         {
             if (w == null) { mode = Mode.Planning; RefreshAll(); return; }
             heldIsNew = true;
-            heldRotation = 0;
             grabOffset = Vector2Int.zero;
             BeginHolding(w);
         }
@@ -321,22 +338,19 @@ namespace Cosecha
 
         void UpdateHolding(Vector2 world, bool overUi, Mouse mouse, Keyboard kb)
         {
-            if ((kb != null && kb.rKey.wasPressedThisFrame) || mouse.rightButton.wasPressedThisFrame)
-            {
-                heldRotation = (heldRotation + 1) % 4;
-                grabOffset = Shapes.Rotate(grabOffset, 1);
-            }
-
-            bool overGrid = GridAt(world, out var grid, out var iso, out var cell);
+            // words are horizontal bars: no rotation (R and right-click do nothing)
+            bool overGrid = GridAt(world, out var grid, out var flat, out var cell);
             var anchor = cell + grabOffset;
             var state = PreviewState.Invalid;
             WordInstance swap = null;
             if (overGrid)
             {
-                if (grid.CanPlace(held, anchor, heldRotation)) state = PreviewState.Valid;
-                else if ((swap = run.SwapCandidate(grid, held, anchor, heldRotation)) != null) state = PreviewState.Swap;
+                // an article dropped on a fitting noun merges into it (takes priority over placing and swapping)
+                if ((swap = run.MergeCandidate(grid, held, cell)) != null) state = PreviewState.Merge;
+                else if (grid.CanPlace(held, anchor)) state = PreviewState.Valid;
+                else if ((swap = run.SwapCandidate(grid, held, anchor)) != null) state = PreviewState.Swap;
             }
-            field.ShowHeld(held, overGrid ? iso : null, anchor, heldRotation, state, world, swap);
+            field.ShowHeld(held, overGrid ? flat : null, anchor, state, world, swap);
 
             if (kb != null && kb.escapeKey.wasPressedThisFrame)
             {
@@ -348,85 +362,250 @@ namespace Cosecha
 
             if (overGrid)
             {
-                if (state == PreviewState.Valid && run.PlaceIn(grid, held, anchor, heldRotation)) EndHolding();
+                if (state == PreviewState.Valid && run.PlaceIn(grid, held, anchor)) EndHolding();
                 else if (state == PreviewState.Swap) HotSwap(grid, anchor, cell);
+                else if (state == PreviewState.Merge)
+                {
+                    string article = held.Entry.Es, noun = swap.Entry.Es;
+                    if (run.MergeArticle(held, swap))
+                    {
+                        toast.Show(UiText.ArticleMerged(article, noun, swap.BasePoints, swap.GoldYield));
+                        EndHolding();
+                    }
+                }
                 return;
             }
             if (FieldView.IsOverCompost(world))
             {
-                string es = held.Entry.Es;
+                string es = held.Shown;
                 int refund = run.Compost(held);
                 toast.Show(UiText.Composted(es, refund));
                 EndHolding();
             }
         }
 
-        /// <summary>Plants the held word and picks up the word it replaces, keeping that word's shape under the cursor.</summary>
+        /// <summary>Plants the held word and picks up the word it replaces, keeping that word under the cursor.</summary>
         void HotSwap(GridModel grid, Vector2Int anchor, Vector2Int cursorCell)
         {
-            var displaced = run.PlaceWithSwap(grid, held, anchor, heldRotation);
+            var displaced = run.PlaceWithSwap(grid, held, anchor);
             if (displaced == null) return;
             heldIsNew = false;
             originLocation = grid.Location;
             originAnchor = displaced.Anchor;
-            originRotation = displaced.Rotation;
             originSlot = -1;
-            heldRotation = displaced.Rotation;
-            grabOffset = displaced.Anchor - cursorCell;
+            grabOffset = new Vector2Int(displaced.Anchor.x - cursorCell.x, 0);
             field.HideHeld();
             BeginHolding(displaced);
-        }
-
-        bool StoreAnywhere(WordInstance w)
-        {
-            if (run.PutInFreeWheelbarrowSlot(w)) return true;
-            return run.Shed.FindFirstFit(w, out var a, out var r) && run.PlaceIn(run.Shed, w, a, r);
         }
 
         void CancelHolding()
         {
             bool ok;
-            if (heldIsNew) ok = StoreAnywhere(held);
+            if (heldIsNew) ok = run.StoreInShed(held);
             else
             {
-                ok = originLocation == WordLocation.Grid ? run.PlaceIn(run.Grid, held, originAnchor, originRotation)
-                    : originLocation == WordLocation.Shed ? run.PlaceIn(run.Shed, held, originAnchor, originRotation)
+                ok = originLocation == WordLocation.Grid ? run.PlaceIn(run.Grid, held, originAnchor)
+                    : originLocation == WordLocation.Shed ? run.PlaceIn(run.Shed, held, originAnchor)
                     : run.PutInWheelbarrow(held, originSlot);
-                if (!ok) ok = StoreAnywhere(held);
+                if (!ok) ok = run.StoreInShed(held);
             }
             if (ok) EndHolding();
             else toast.Show(UiText.ShedFull);
         }
 
-        void UpdateTargeting(Vector2 world, Vector2Int cell, bool overUi, Mouse mouse, Keyboard kb)
+        // ================================================================ free grammar action
+
+        public void OnGrammarClicked()
         {
-            var hovered = overUi ? null : WordAt(world, cell);
-            var targets = run.Grid.Words.Where(w => run.IsValidModTarget(pendingMod.Kind, w)).ToList();
+            if (mode != Mode.Planning) return;
+            if (run.GrammarActionsLeft <= 0) { toast.Show(UiText.NoGrammarAction); return; }
+            if (!run.HasGrammarTarget) { toast.Show(UiText.NoGrammarTarget); return; }
+            shop.SetOpen(false);
+            mode = Mode.Targeting;
+            RefreshAll();
+        }
+
+        void UpdateTargeting(Vector2 world, bool overUi, Mouse mouse, Keyboard kb)
+        {
+            var hovered = overUi ? null : WordAt(world);
+            var targets = run.Grid.Words.Where(RunState.IsGrammarTarget).ToList();
             field.ShowTargets(targets, targets.Contains(hovered) ? hovered : null);
             UpdateWorldTooltip(hovered, overUi);
 
-            if (kb != null && kb.escapeKey.wasPressedThisFrame)
+            if ((kb != null && kb.escapeKey.wasPressedThisFrame) || mouse.rightButton.wasPressedThisFrame)
             {
-                run.CancelModPurchase(pendingMod, pendingModPrice);
-                pendingMod = null;
                 field.ClearGlow();
                 mode = Mode.Planning;
                 RefreshAll();
                 return;
             }
 
-            if (mouse.leftButton.wasPressedThisFrame && !overUi && hovered != null && run.IsValidModTarget(pendingMod.Kind, hovered))
+            if (mouse.leftButton.wasPressedThisFrame && !overUi && run.CanUseGrammarAction(hovered))
+                OpenGrammarQuiz(hovered);
+        }
+
+        /// <summary>
+        /// Conjugate a verb (pick a person) or inflect an adjective (pick a form), then type the form. 3 attempts.
+        /// The dialog can be cancelled until the first attempt; after that the action is used either way.
+        /// </summary>
+        void OpenGrammarQuiz(WordInstance w)
+        {
+            field.ClearGlow();
+            tooltip.Hide();
+            worldTooltipShown = false;
+            mode = Mode.Modal;
+            RefreshAll();
+
+            bool verb = w.Type == WordType.Verb;
+            var e = w.Entry;
+            string[] forms = verb ? e.PresentForms : e.AdjectiveForms;
+            string[] names = verb ? UiText.Persons : UiText.AdjectiveFormNames;
+            var checker = run.Checker;
+            int attempts = config.quizAttempts;
+            int selected = -1;
+            bool started = false, done = false;
+            Action submit = null;
+            TMP_InputField input = null;
+            TextMeshProUGUI chosenLine = null, answerLine = null;
+
+            dialog.Open(verb ? UiText.ConjugateTitle : UiText.InflectTitle, 520);
+            dialog.AddText(verb ? UiText.ConjugatePrompt(e) : UiText.InflectPrompt(e), 15);
+            var choices = new List<Button>();
+            int perRow = verb ? 3 : 4;
+            RectTransform choiceRow = null;
+            for (int i = 0; i < names.Length; i++)
             {
-                var kind = pendingMod.Kind;
-                pendingMod = null;
-                field.ClearGlow();
-                tooltip.Hide();
-                worldTooltipShown = false;
-                mode = Mode.Modal;
-                RefreshAll();
-                if (kind == OfferKind.ArticleMod) ArticleQuiz(hovered);
-                else ConjugationQuiz(hovered);
+                if (i % perRow == 0) choiceRow = dialog.AddButtonRow();
+                int idx = i;
+                var b = dialog.AddButton(choiceRow, names[i], () => Select(idx), Pal.ButtonAlt, verb ? 150 : 106);
+                // a form the word already shows would change nothing
+                b.interactable = verb ? w.VerbPerson != i : !string.Equals(forms[i], w.Shown, StringComparison.OrdinalIgnoreCase);
+                choices.Add(b);
             }
+            chosenLine = dialog.AddText(verb ? UiText.PickPersonFirst : UiText.PickFormFirst, 14, Pal.TextMuted);
+            input = dialog.AddInput("", () => submit());
+            dialog.AddAccentButtons();
+            var feedback = dialog.AddText(UiText.AttemptsLeft(attempts), 14, Pal.TextMuted);
+            answerLine = ExamMode ? null : dialog.AddAnswerLine();
+            var row = dialog.AddButtonRow();
+            var submitBtn = dialog.AddButton(row, UiText.Submit, () => submit());
+            if (!ExamMode)
+                dialog.AddRevealButton(row, answerLine, () => selected < 0 ? (verb ? UiText.PickPersonFirst : UiText.PickFormFirst) : forms[selected]);
+            var cancelBtn = dialog.AddButton(row, UiText.Cancel, CloseDialog, Pal.ButtonDanger);
+
+            void Select(int i)
+            {
+                if (started || done) return;
+                selected = i;
+                for (int k = 0; k < choices.Count; k++)
+                    choices[k].GetComponent<Image>().color = k == i ? Pal.Button : Pal.ButtonAlt;
+                chosenLine.text = $"<b>{names[i]}</b>: …";
+                chosenLine.color = Pal.Text;
+                if (answerLine != null) answerLine.text = forms[i];
+                dialog.Focus(input);
+            }
+
+            submit = () =>
+            {
+                if (done) return;
+                if (selected < 0)
+                {
+                    feedback.text = verb ? UiText.PickPersonFirst : UiText.PickFormFirst;
+                    feedback.color = Pal.Bad;
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(input.text)) { dialog.Focus(input); return; }
+                if (!started)
+                {
+                    started = true;
+                    cancelBtn.gameObject.SetActive(false);
+                    foreach (var c in choices) c.interactable = false;
+                }
+                run.RegisterQuizAttempt();
+                var res = checker.CheckExact(input.text, forms[selected]);
+                if (res.IsCorrect)
+                {
+                    done = true;
+                    if (verb) run.ApplyConjugation(w, selected, true);
+                    else run.ApplyInflection(w, selected, true);
+                    dialog.Close();
+                    toast.Show(res.Result == AnswerResult.CorrectIgnoringAccents ? UiText.AccentHint(forms[selected]) : UiText.GrammarSuccess(forms[selected]), 2.5f);
+                    mode = Mode.Planning;
+                    RefreshAll();
+                    return;
+                }
+                attempts--;
+                if (attempts > 0)
+                {
+                    feedback.text = UiText.Wrong(attempts);
+                    feedback.color = Pal.Bad;
+                    input.text = "";
+                    dialog.Focus(input);
+                    return;
+                }
+                done = true;
+                if (verb) run.ApplyConjugation(w, selected, false);
+                else run.ApplyInflection(w, selected, false);
+                feedback.text = UiText.GrammarFailed + "\n" + UiText.Solution(forms[selected]);
+                feedback.color = Pal.Bad;
+                input.interactable = false;
+                submitBtn.gameObject.SetActive(false);
+                dialog.AddButton(row, UiText.Continue, CloseDialog);
+            };
+        }
+
+        // ================================================================ magnifier
+
+        public void OnMagnifierClicked()
+        {
+            if (mode == Mode.Inspecting) { StopInspecting(); return; }
+            if (mode != Mode.Planning || run.Analysis.Structures.Count == 0) return;
+            shop.SetOpen(false);
+            tooltip.Hide();
+            worldTooltipShown = false;
+            mode = Mode.Inspecting;
+            RefreshAll();
+        }
+
+        void StopInspecting()
+        {
+            field.ClearGlow();
+            tooltip.Hide();
+            worldTooltipShown = false;
+            mode = Mode.Planning;
+            RefreshAll();
+        }
+
+        /// <summary>Hovering a field word shows every structure it is part of, with a German gloss; its sentences glow.</summary>
+        void UpdateInspecting(Vector2 world, bool overUi, Mouse mouse, Keyboard kb)
+        {
+            if ((kb != null && kb.escapeKey.wasPressedThisFrame) || mouse.rightButton.wasPressedThisFrame)
+            {
+                StopInspecting();
+                return;
+            }
+
+            var hovered = overUi ? null : WordAt(world);
+            if (hovered != null && hovered.Location != WordLocation.Grid) hovered = null;   // the shed does not score
+            if (hovered == null)
+            {
+                field.ShowTargets(Enumerable.Empty<WordInstance>(), null);
+                if (worldTooltipShown) { tooltip.Hide(); worldTooltipShown = false; }
+                // a click on empty field or sky puts the magnifier down (clicks on UI are handled by the UI)
+                if (mouse.leftButton.wasPressedThisFrame && !overUi) StopInspecting();
+                return;
+            }
+
+            var structures = run.Analysis.StructuresOf(hovered.Id).ToList();
+            var byId = run.Grid.Words.ToDictionary(w => w.Id);
+            var glow = structures.SelectMany(s => s.Words)
+                .Select(t => byId.TryGetValue(t.Id, out var w) ? w : null)
+                .Where(w => w != null).Distinct().ToList();
+            if (!glow.Contains(hovered)) glow.Add(hovered);
+            field.ShowTargets(glow, hovered);
+            tooltip.Show(UiText.MagnifierTooltip(hovered, structures,
+                id => byId.TryGetValue(id, out var w) ? w : null, run.ScoreOf(hovered)));
+            worldTooltipShown = true;
         }
 
         // ================================================================ shop actions
@@ -440,6 +619,14 @@ namespace Cosecha
         public void OnBuyWord(WordOffer o)
         {
             if (mode != Mode.Planning || !o.Available || !run.CanAfford(o.Stats.Price)) return;
+            if (o.NoQuiz)
+            {
+                // articles are bought without a quiz; the sentence rules practice them
+                var w = run.CompleteWordPurchase(o, null);
+                toast.Show(UiText.BoughtWithoutQuiz(o.Entry.Es), 2f);
+                StartHoldingNew(w);
+                return;
+            }
             mode = Mode.Modal;
             RefreshAll();
             PurchaseQuiz(o);
@@ -451,42 +638,6 @@ namespace Cosecha
             mode = Mode.Modal;
             RefreshAll();
             JokerQuiz(run.Shop.Joker);
-        }
-
-        public void OnBuyUpgrade(UpgradeOffer o)
-        {
-            if (mode != Mode.Planning) return;
-            string why = run.WhyCannotBuy(o);
-            if (why != null) { toast.Show(why); return; }
-
-            if (o.IsMod)
-            {
-                if (!run.BeginModPurchase(o, out pendingModPrice)) return;
-                pendingMod = o;
-                mode = Mode.Targeting;
-                RefreshAll();
-                return;
-            }
-            if (o.Kind == OfferKind.FieldExpansion)
-            {
-                FieldExpansionChoice(o);
-                return;
-            }
-            if (run.BuyUpgrade(o)) RefreshAll();
-        }
-
-        void FieldExpansionChoice(UpgradeOffer o)
-        {
-            mode = Mode.Modal;
-            RefreshAll();
-            dialog.Open(UiText.FieldChoiceTitle);
-            dialog.AddText($"{run.Grid.Width} × {run.Grid.Height}  (max {run.Grid.MaxWidth} × {run.Grid.MaxHeight})", 15);
-            var row = dialog.AddButtonRow();
-            var col = dialog.AddButton(row, UiText.AddColumn, () => { run.BuyFieldExpansion(o, true); CloseDialog(); }, null, 120);
-            col.interactable = run.Grid.CanAddColumn;
-            var rowBtn = dialog.AddButton(row, UiText.AddRow, () => { run.BuyFieldExpansion(o, false); CloseDialog(); }, null, 120);
-            rowBtn.interactable = run.Grid.CanAddRow;
-            dialog.AddButton(row, UiText.Cancel, CloseDialog, Pal.ButtonDanger, 120);
         }
 
         void CloseDialog()
@@ -505,7 +656,7 @@ namespace Cosecha
             bool done = false;
             Action submit = null;
 
-            dialog.Open(UiText.PurchaseQuizTitle(o.SpanishToGerman));
+            dialog.Open(UiText.PurchaseQuizTitle(o.SpanishToGerman), 520);
             dialog.AddText($"<b>{o.Prompt}</b>", 28);
             dialog.AddText(UiText.TypeName(o.Entry.Type), 13, Pal.TextMuted);
             var input = dialog.AddInput("", () => submit());
@@ -516,14 +667,17 @@ namespace Cosecha
             var submitBtn = dialog.AddButton(row, UiText.Submit, () => submit());
             if (!ExamMode)
                 dialog.AddRevealButton(row, answerLine, () => o.SpanishToGerman ? string.Join(" / ", o.Entry.De) : SpanishWithArticle(o.Entry));
+            // the purchase can be cancelled (for free) until the first answer is submitted
+            var cancelBtn = dialog.AddButton(row, UiText.Cancel, CloseDialog, Pal.ButtonDanger);
             dialog.Focus(input);
 
             submit = () =>
             {
                 if (done) return;
                 if (string.IsNullOrWhiteSpace(input.text)) { dialog.Focus(input); return; }
+                cancelBtn.gameObject.SetActive(false);
                 run.RegisterQuizAttempt();
-                var res = o.SpanishToGerman ? checker.CheckGerman(input.text, o.Entry.De) : checker.CheckSpanish(input.text, o.Entry.Es);
+                var res = o.SpanishToGerman ? checker.CheckGerman(input.text, o.Entry) : checker.CheckSpanish(input.text, o.Entry);
                 if (res.IsCorrect)
                 {
                     done = true;
@@ -606,7 +760,7 @@ namespace Cosecha
                     }
                     return;
                 }
-                bool accentOnly = run.Checker.CheckSpanish(input.text, entry.Es).Result == AnswerResult.CorrectIgnoringAccents;
+                bool accentOnly = run.Checker.CheckSpanish(input.text, entry).Result == AnswerResult.CorrectIgnoringAccents;
                 JokerConfirm(entry, accentOnly);
             };
         }
@@ -631,150 +785,6 @@ namespace Cosecha
             buy.interactable = run.CanAfford(price);
             if (!run.CanAfford(price)) dialog.AddText(UiText.NotEnoughGold, 13, Pal.Bad);
             dialog.AddButton(row, UiText.Cancel, CloseDialog, Pal.ButtonDanger);
-        }
-
-        void ArticleQuiz(WordInstance w)
-        {
-            var e = w.Entry;
-            var checker = run.Checker;
-            int attempts = config.quizAttempts;
-            bool done = false;
-            Action submit = null;
-
-            dialog.Open(UiText.ArticleQuizTitle);
-            dialog.AddText(UiText.ArticlePrompt(e), 16);
-            var def = dialog.AddInput(UiText.ArticleDefinite, () => submit(), 110);
-            var indef = dialog.AddInput(UiText.ArticleIndefinite, () => submit(), 110);
-            dialog.AddAccentButtons();
-            var feedback = dialog.AddText(UiText.AttemptsLeft(attempts), 14, Pal.TextMuted);
-            var answerLine = ExamMode ? null : dialog.AddAnswerLine();
-            var row = dialog.AddButtonRow();
-            var submitBtn = dialog.AddButton(row, UiText.Submit, () => submit());
-            if (!ExamMode)
-                dialog.AddRevealButton(row, answerLine, () => $"{e.Noun.articleDefinite} {e.Es} · {e.Noun.articleIndefinite} {e.Es}");
-            dialog.Focus(def);
-
-            submit = () =>
-            {
-                if (done) return;
-                if (string.IsNullOrWhiteSpace(def.text) || string.IsNullOrWhiteSpace(indef.text))
-                {
-                    dialog.Focus(string.IsNullOrWhiteSpace(def.text) ? def : indef);
-                    return;
-                }
-                run.RegisterQuizAttempt();
-                bool ok1 = checker.CheckExact(def.text, e.Noun.articleDefinite).IsCorrect;
-                bool ok2 = checker.CheckExact(indef.text, e.Noun.articleIndefinite).IsCorrect;
-                def.image.color = ok1 ? Pal.InputLockedGood : Pal.InputWrong;
-                indef.image.color = ok2 ? Pal.InputLockedGood : Pal.InputWrong;
-                if (ok1 && ok2)
-                {
-                    done = true;
-                    run.ApplyArticleModResult(w, true);
-                    dialog.Close();
-                    toast.Show(UiText.ArticleSuccess(config.articleMultiplier));
-                    mode = Mode.Planning;
-                    RefreshAll();
-                    return;
-                }
-                attempts--;
-                if (attempts > 0)
-                {
-                    feedback.text = UiText.Wrong(attempts);
-                    feedback.color = Pal.Bad;
-                    dialog.Focus(ok1 ? indef : def);
-                    return;
-                }
-                done = true;
-                run.ApplyArticleModResult(w, false);
-                feedback.text = UiText.ModFailed + "\n" + UiText.Solution($"{e.Noun.articleDefinite} {e.Es} · {e.Noun.articleIndefinite} {e.Es}");
-                feedback.color = Pal.Bad;
-                def.interactable = indef.interactable = false;
-                submitBtn.gameObject.SetActive(false);
-                dialog.AddButton(row, UiText.Continue, CloseDialog);
-            };
-        }
-
-        void ConjugationQuiz(WordInstance w)
-        {
-            var e = w.Entry;
-            var forms = e.PresentForms;
-            var checker = run.Checker;
-            var correct = (bool[])w.ConjugationCorrect.Clone();
-            int submits = config.quizAttempts;
-            bool done = false;
-            Action submit = null;
-
-            dialog.Open(UiText.ConjugationQuizTitle, 500);
-            dialog.AddText(UiText.ConjugationPrompt(e), 16);
-            var inputs = new TMP_InputField[6];
-            for (int i = 0; i < 6; i++)
-            {
-                inputs[i] = dialog.AddInput(UiText.Persons[i], () => submit(), 170);
-                if (correct[i])
-                {
-                    inputs[i].text = forms[i];
-                    inputs[i].interactable = false;
-                    inputs[i].image.color = Pal.InputLockedGood;
-                }
-            }
-            dialog.AddAccentButtons();
-            var feedback = dialog.AddText(UiText.AttemptsLeft(submits), 14, Pal.TextMuted);
-            var answerLine = ExamMode ? null : dialog.AddAnswerLine();
-            var row = dialog.AddButtonRow();
-            var submitBtn = dialog.AddButton(row, UiText.Submit, () => submit());
-            if (!ExamMode)
-                dialog.AddRevealButton(row, answerLine, () =>
-                    string.Join(" · ", forms));   // one line, in the order of the input fields, so the dialog keeps fitting the screen
-            dialog.Focus(inputs.FirstOrDefault(x => x.interactable));
-
-            submit = () =>
-            {
-                if (done) return;
-                run.RegisterQuizAttempt();
-                bool accentHint = false;
-                for (int i = 0; i < 6; i++)
-                {
-                    if (correct[i]) continue;
-                    var r = checker.CheckExact(inputs[i].text, forms[i]);
-                    if (r.IsCorrect)
-                    {
-                        correct[i] = true;
-                        accentHint |= r.Result == AnswerResult.CorrectIgnoringAccents;
-                        inputs[i].text = forms[i];
-                        inputs[i].interactable = false;
-                        inputs[i].image.color = Pal.InputLockedGood;
-                    }
-                    else inputs[i].image.color = Pal.InputWrong;
-                }
-                submits--;
-                bool all = correct.All(b => b);
-                if (!all && submits > 0)
-                {
-                    feedback.text = (accentHint ? "Akzente ergänzt. " : "") + UiText.AttemptsLeft(submits);
-                    feedback.color = Pal.Bad;
-                    dialog.Focus(inputs.FirstOrDefault(x => x.interactable));
-                    return;
-                }
-                done = true;
-                int before = w.CorrectForms;
-                int oldSize = w.Size;
-                run.ApplyConjugationModResult(w, correct);
-                for (int i = 0; i < 6; i++)
-                    if (!correct[i])
-                    {
-                        inputs[i].text = forms[i];
-                        inputs[i].textComponent.color = Pal.Bad;
-                        inputs[i].image.color = Pal.InputWrong;
-                        inputs[i].interactable = false;
-                    }
-                string msg = UiText.ConjugationResult(w.CorrectForms, oldSize, w.Size);
-                if (w.CorrectForms == before) msg = UiText.ModFailed + "\n" + msg;
-                feedback.text = msg;
-                feedback.color = w.CorrectForms > before ? Pal.Good : Pal.Bad;
-                submitBtn.gameObject.SetActive(false);
-                dialog.AddButton(row, UiText.Continue, CloseDialog);
-            };
         }
 
         // ================================================================ harvest
@@ -803,12 +813,26 @@ namespace Cosecha
             shop.Refresh(run, false);
 
             var roundStats = run.CurrentRound;
+            // structures light up in order Frage → Satz → Satzteil (collected before the scarecrow can change the field)
+            var structures = field.StructureObjects.OrderByDescending(x => (int)x.s.Category).Select(x => x.t).ToList();
             var res = run.Harvest(forced);
+            float total = config.harvestAnimationSeconds;   // ≤ 2.5 s by default, skippable by click
 
-            // 1) words bounce and pop their points
-            float total = config.harvestAnimationSeconds;
+            // 1) structures light up one after another
+            if (structures.Count > 0)
+            {
+                float perStructure = Mathf.Min(0.35f, total * 0.35f / structures.Count);
+                foreach (var t in structures)
+                {
+                    if (skipHarvest) break;
+                    StartCoroutine(field.LightUp(t, Mathf.Max(0.2f, perStructure * 1.4f)));
+                    yield return Wait(perStructure);
+                }
+            }
+
+            // 2) words bounce and pop their points
             int n = Mathf.Max(1, res.WordScores.Count);
-            float per = Mathf.Min(0.25f, total * 0.55f / n);
+            float per = Mathf.Min(0.2f, total * 0.3f / n);
             foreach (var ws in res.WordScores)
             {
                 if (skipHarvest) break;
@@ -817,13 +841,13 @@ namespace Cosecha
                 yield return Wait(per);
             }
 
-            // 2) total counts up
+            // 3) total counts up
             bool reached = ScoreCalculator.Reaches(res.Score, res.Target);
-            float countTime = total * 0.25f, t = 0;
-            while (t < countTime && !skipHarvest)
+            float countTime = total * 0.2f, t0 = 0;
+            while (t0 < countTime && !skipHarvest)
             {
-                t += Time.deltaTime;
-                bigText.text = UiText.HudScore(res.Score * Mathf.Clamp01(t / countTime), res.Target);
+                t0 += Time.deltaTime;
+                bigText.text = UiText.HudScore(res.Score * Mathf.Clamp01(t0 / countTime), res.Target);
                 yield return null;
             }
             bigText.text = UiText.HudScore(res.Score, res.Target);
@@ -852,7 +876,7 @@ namespace Cosecha
                     rank = Math.Round(run.Rank, 1),
                     roundReached = run.Round,
                     wordsPlanted = run.WordsPlanted,
-                    modsLearned = run.ModsLearned,
+                    modsLearned = run.GrammarLearned,
                     practice = runIsPractice
                 });
                 mode = Mode.GameOver;
@@ -865,6 +889,31 @@ namespace Cosecha
             mode = Mode.Planning;
             shop.SetOpen(true);    // auto-open after the harvest
             RefreshAll();
+            if (run.FieldGrewThisRound) ShowBanner(UiText.FieldGrows);
+        }
+
+        void ShowBanner(string text)
+        {
+            if (bannerRoutine != null) StopCoroutine(bannerRoutine);
+            bannerRoutine = StartCoroutine(BannerRoutine(text));
+        }
+
+        IEnumerator BannerRoutine(string text)
+        {
+            bigText.text = text;
+            bigText.color = new Color32(255, 236, 160, 255);
+            float time = 0, d = 1.8f;
+            while (time < d)
+            {
+                time += Time.deltaTime;
+                bigText.alpha = 1f - Mathf.Clamp01((time - d * 0.6f) / (d * 0.4f));
+                bigText.rectTransform.localScale = Vector3.one * (1f + 0.08f * Mathf.Sin(Mathf.Clamp01(time / 0.3f) * Mathf.PI));
+                yield return null;
+            }
+            bigText.text = "";
+            bigText.alpha = 1f;
+            bigText.rectTransform.localScale = Vector3.one;
+            bannerRoutine = null;
         }
 
         // ================================================================ debug overlay
@@ -878,11 +927,20 @@ namespace Cosecha
             RefreshAll();
         }
 
+        public void DebugAddGrammar()
+        {
+            if (run == null) return;
+            run.GrammarActionsLeft++;
+            RefreshAll();
+        }
+
         public void DebugChangeRound(int delta)
         {
             if (!DebugReady) return;
+            var (w, h) = (run.Grid.Width, run.Grid.Height);
             run.DebugSetRound(run.Round + delta);
             RefreshAll();
+            if (run.Grid.Width != w || run.Grid.Height != h) ShowBanner(UiText.FieldGrows);
         }
 
         public void DebugForceHarvest(ForcedOutcome outcome)
@@ -906,14 +964,14 @@ namespace Cosecha
                 run.SetVocabulary(vocab);
                 run.RefreshChecker();
             }
-            toast.Show(UiText.DebugReloaded(vocab.Entries.Count, vocab.Warnings.Count));
+            toast.Show(vocab.Error ?? UiText.DebugReloaded(vocab.Entries.Count, vocab.Warnings.Count));
             if (run != null) RefreshAll();
         }
 
         public void DebugToggleLabels()
         {
             field.ShowScoreLabels = !field.ShowScoreLabels;
-            if (run != null) field.Rebuild(run);
+            if (run != null) field.Rebuild(run, false);
         }
     }
 }
